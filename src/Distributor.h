@@ -36,7 +36,7 @@ namespace CRAFT
 			//[FORMID ~ ESP]
 			RE::TESForm* createdItem = nullptr;
 			try {
-				if (auto str = sections.at(0); str.find(" ~ ") != std::string::npos) {
+				if (auto str = sections.at(0); str.contains(" ~ ")) {
 					if (auto formIDpair = string::split(str, " ~ "); !formIDpair.empty()) {
 						auto formID = string::lexical_cast<RE::FormID>(formIDpair.at(0), true);
 						auto esp = formIDpair.at(1);
@@ -76,7 +76,7 @@ namespace CRAFT
 								a_formidMap[item->GetFormID()] = { createdItem, count };
 							}
 						}
-					} else if (str.find("0X") != std::string::npos || str.find("0x") != std::string::npos) {
+					} else if (str.contains("0X") || str.contains("0x")) {
 						auto formID = string::lexical_cast<RE::FormID>(str, true);
 						if (auto item = RE::TESForm::LookupByID(formID); item) {
 							a_formidMap[item->GetFormID()] = { createdItem, count };
@@ -222,16 +222,16 @@ namespace CRAFT
 
 				generatedConstructibles.push_back(constructibleObj);
 
-				isArmor ? TEMPER::armorCount++ : TEMPER::weapCount++;
+				isArmor ? armorCount++ : weapCount++;
 
 				return true;
 			}
 
 			return false;
 		}
-	};
+	}
 
-	namespace SMELT
+    namespace SMELT
 	{
 		inline constexpr RawMap rawMap = {
 			{ "ArmorMaterialBearStormcloak"sv, 0x800E4 },
@@ -324,12 +324,12 @@ namespace CRAFT
 			auto constructibleObj = factory ? factory->Create() : nullptr;
 
 			if (constructibleObj) {
-				constructibleObj->benchKeyword = (a_ingot->GetFormID() == tanningRackMat) ? tanningRackKywd : smeltKywd;
+				constructibleObj->benchKeyword = a_ingot->GetFormID() == tanningRackMat ? tanningRackKywd : smeltKywd;
 				constructibleObj->requiredItems.AddObjectToContainer(a_item, a_numRequired, nullptr);
 				constructibleObj->createdItem = a_ingot;
 
 				RE::TESConditionItem* equippedNode = nullptr;
-				if (a_type != TYPE::kClutter) {
+				if (a_type != kClutter) {
 					equippedNode = new RE::TESConditionItem;
 					equippedNode->next = nullptr;
 					equippedNode->data.flags.isOR = true;
@@ -363,7 +363,7 @@ namespace CRAFT
 
 					auto& arr = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::BGSConstructibleObject>();
 					auto result = std::ranges::find_if(arr,
-						[&](const auto& constructibleObj) { return constructibleObj && constructibleObj->benchKeyword == FORGE::kywd && constructibleObj->createdItem == item; });
+						[&](const auto& cobj) { return cobj && cobj->benchKeyword == FORGE::kywd && cobj->createdItem == item; });
 					if (result != arr.end()) {
 						auto craftRecipe = *result;
 						numConstructed = static_cast<std::uint16_t>(craftRecipe->requiredItems.CountObjectsInContainer(static_cast<RE::TESBoundObject*>(a_ingot)));
@@ -387,16 +387,16 @@ namespace CRAFT
 						std::uint16_t cap = 0;
 						switch (a_type) {
 						case kArmor:
-							cap = SMELT::maxArmorAmount;
+							cap = maxArmorAmount;
 							break;
 						case kWeap:
-							cap = SMELT::maxWeapAmount;
+							cap = maxWeapAmount;
 							break;
 						case kJewel:
-							cap = SMELT::maxJewelryAmount;
+							cap = maxJewelryAmount;
 							break;
 						case kClutter:
-							cap = SMELT::maxClutterAmount;
+							cap = maxClutterAmount;
 							break;
 						}
 						if (cap > 0) {
@@ -412,16 +412,16 @@ namespace CRAFT
 
 				switch (a_type) {
 				case kArmor:
-					SMELT::armorCount++;
+                    armorCount++;
 					break;
 				case kWeap:
-					SMELT::weapCount++;
+                    weapCount++;
 					break;
 				case kJewel:
-					SMELT::jewelryCount++;
+                    jewelryCount++;
 					break;
 				case kClutter:
-					SMELT::miscObjCount++;
+                    miscObjCount++;
 					break;
 				}
 

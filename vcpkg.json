@@ -1,12 +1,13 @@
 {
-  "name": "dynamicsmelterrecipe",
-  "version-string": "1.0.0",
+  "name": "crafting-recipe-distributor",
+  "version-string": "2.0.0",
   "description": "",
   "homepage": "",
   "license": "MIT",
   "dependencies": [
     "boost-stl-interfaces",
     "frozen",
+    "rsm-binary-io",
     "simpleini",
     "spdlog",
     "xbyak"

@@ -22,6 +22,8 @@ namespace CRAFT
 			return;
 		}
 
+		std::ranges::sort(configs);
+
 		logger::info("{} matching inis found", configs.size());
 
 		const auto get_ini_data = [](CSimpleIniA& ini, const char* a_type, CustomINIData& a_iniData) {
@@ -87,19 +89,18 @@ namespace CRAFT
 		logger::info("	max jewelry cap : {}", SMELT::maxJewelryAmount);
 		logger::info("	max clutter cap : {}", SMELT::maxClutterAmount);
 
-		ini.SaveFile(path);
+		(void)ini.SaveFile(path);
 	}
 
 	void Distribute()
 	{
-		const auto dataHandler = RE::TESDataHandler::GetSingleton();
-		if (dataHandler) {
+		if (const auto dataHandler = RE::TESDataHandler::GetSingleton(); dataHandler) {
 			logger::info("{:*^30}", "PROCESSING");
 
-			auto ironIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5ACE4);
-			auto dwemerIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0xDB8A2);
-			auto goldIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5AD9E);
-			auto silverIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5ACE3);
+            const auto ironIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5ACE4);
+            const auto dwemerIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0xDB8A2);
+            const auto goldIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5AD9E);
+            const auto silverIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5ACE3);
 
 			FORGE::kywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x00088105);             //CraftingSmithingForge
 			SMELT::smeltKywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x000A5CCE);        //CraftingSmithingSmelter
@@ -114,10 +115,10 @@ namespace CRAFT
 			get_data(TEMPER::rawMap, TEMPER::keywordMap);
 			get_custom_data(TEMPER::customINIData, TEMPER::keywordMap, TEMPER::formidMap);
 
-			for (auto& constructibleObj : dataHandler->GetFormArray<RE::BGSConstructibleObject>()) {
-				if (constructibleObj && constructibleObj->benchKeyword == SMELT::smeltKywd) {
-					const auto obj = constructibleObj->requiredItems.GetContainerObjectAt(0);
-					if (obj.has_value() && constructibleObj->conditions.head == nullptr) {
+			for (auto& cobj : dataHandler->GetFormArray<RE::BGSConstructibleObject>()) {
+				if (cobj && cobj->benchKeyword == SMELT::smeltKywd) {
+					const auto obj = cobj->requiredItems.GetContainerObjectAt(0);
+					if (obj.has_value() && cobj->conditions.head == nullptr) {
 						auto itemCountNode = new RE::TESConditionItem;
 						itemCountNode->next = nullptr;
 						itemCountNode->data.comparisonValue.f = static_cast<float>(obj.value()->count);
@@ -125,14 +126,14 @@ namespace CRAFT
 						itemCountNode->data.functionData.function = RE::FUNCTION_DATA::FunctionID::kGetItemCount;
 						itemCountNode->data.functionData.params[0] = obj.value()->obj;
 
-						constructibleObj->conditions.head = itemCountNode;
+						cobj->conditions.head = itemCountNode;
 					}
 				}
 			}
 
 			const auto get_keyword = [](RE::TESBoundObject* a_form, const KeywordMap& a_map) {
 				if (const auto keywordForm = a_form->As<RE::BGSKeywordForm>(); keywordForm && keywordForm->keywords) {
-					std::span<RE::BGSKeyword*> keywords(keywordForm->keywords, keywordForm->numKeywords);
+					std::span keywords(keywordForm->keywords, keywordForm->numKeywords);
 					for (auto& keyword : keywords | std::views::reverse) {
 						if (auto result = a_map.find(std::string(keyword->formEditorID)); result != a_map.end()) {
 							return result;
@@ -146,12 +147,12 @@ namespace CRAFT
 				bool didFormID = false;
 		
 				auto formid = a_form->GetFormID();
-				if (SMELT::formidMap.find(formid) != SMELT::formidMap.end()) {
+				if (SMELT::formidMap.contains(formid)) {
 					if (SMELT::create_recipe(a_type, a_form, SMELT::formidMap[formid].first, SMELT::formidMap[formid].second)) {
 						didFormID = true;
 					}
 				}
-				if (TEMPER::formidMap.find(formid) != TEMPER::formidMap.end()) {
+				if (TEMPER::formidMap.contains(formid)) {
 					if (TEMPER::create_recipe(a_form, TEMPER::formidMap[formid].first, TEMPER::formidMap[formid].second)) {
 						didFormID = true;
 					}
@@ -162,12 +163,12 @@ namespace CRAFT
 				}
 
 				if (auto result = get_keyword(a_form, SMELT::keywordMap); result != SMELT::keywordMap.end()) {
-					auto& [keyword, ingotCount] = (*result);
+					auto& [keyword, ingotCount] = *result;
 					auto& [ingot, count] = ingotCount;
 					SMELT::create_recipe(a_type, a_form, ingot, count);
 				}
 				if (auto result = get_keyword(a_form, TEMPER::keywordMap); result != TEMPER::keywordMap.end()) {
-					auto& [keyword, matCount] = (*result);
+					auto& [keyword, matCount] = *result;
 					auto& [mat, count] = matCount;
 					TEMPER::create_recipe(a_form, mat, count);
 				}
@@ -191,7 +192,7 @@ namespace CRAFT
 						} else {
 							bool didFormID = false;
 							auto formid = armor->GetFormID();
-							if (SMELT::formidMap.find(formid) != SMELT::formidMap.end()) {
+							if (SMELT::formidMap.contains(formid)) {
 								if (SMELT::create_recipe(TYPE::kJewel, armor, SMELT::formidMap[formid].first, SMELT::formidMap[formid].second)) {
 									didFormID = true;
 								}
@@ -202,7 +203,7 @@ namespace CRAFT
 							RE::TESBoundObject* ingot = nullptr;
 							std::uint16_t numConstructed = 0;
 							if (auto result = get_keyword(armor, SMELT::keywordMap); result != SMELT::keywordMap.end()) {
-								auto& [keyword, ingotCount] = (*result);
+								auto& [keyword, ingotCount] = *result;
 								ingot = static_cast<RE::TESBoundObject*>(ingotCount.first);
 								numConstructed = ingotCount.second;
 							} else {
@@ -243,7 +244,7 @@ namespace CRAFT
 					if (auto name = std::string(miscObj->GetName()); !name.empty()) {
 						bool didFormID = false;
 						auto formid = miscObj->GetFormID();
-						if (SMELT::formidMap.find(formid) != SMELT::formidMap.end()) {
+						if (SMELT::formidMap.contains(formid)) {
 							if (SMELT::create_recipe(TYPE::kClutter, miscObj, SMELT::formidMap[formid].first, SMELT::formidMap[formid].second)) {
 								didFormID = true;
 							}
@@ -254,7 +255,7 @@ namespace CRAFT
 						RE::TESBoundObject* ingot = nullptr;
 						std::uint16_t numConstructed = 0;
 						if (auto result = get_keyword(miscObj, SMELT::keywordMap); result != SMELT::keywordMap.end()) {
-							auto& [keyword, ingotCount] = (*result);
+							auto& [keyword, ingotCount] = *result;
 							ingot = static_cast<RE::TESBoundObject*>(ingotCount.first);
 							numConstructed = ingotCount.second;
 						} else {
@@ -294,7 +295,7 @@ namespace CRAFT
 			}
 			logger::info("Finished CLUTTER");
 
-			std::copy(generatedConstructibles.begin(), generatedConstructibles.end(), std::back_inserter(dataHandler->GetFormArray<RE::BGSConstructibleObject>()));
+			std::ranges::copy(generatedConstructibles, std::back_inserter(dataHandler->GetFormArray<RE::BGSConstructibleObject>()));
 			generatedConstructibles.clear();
 
 			logger::info("{:*^30}", "RESULT");
