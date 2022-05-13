@@ -23,7 +23,6 @@ SKSE plugin that auto generates crafting and smelting recipes
 ```
 git clone https://github.com/powerof3/CraftingRecipeDistributor.git
 cd CraftingRecipeDistributor
-cmake -B build -S .
 ```
 ### SSE
 ```
