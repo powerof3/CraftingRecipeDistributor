@@ -180,7 +180,11 @@ namespace CRAFT
 
 		inline bool create_recipe(RE::TESBoundObject* a_item, RE::TESForm* a_mat, std::uint16_t a_requiredNum)
 		{
-			bool isArmor = a_item->IsArmor();
+			if (a_item == a_mat) {
+				return false;
+			}
+
+		    bool isArmor = a_item->IsArmor();
 
 			auto& arr = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::BGSConstructibleObject>();
 			if (std::ranges::any_of(arr, [&](const auto& constructibleObj) {
