@@ -2,8 +2,18 @@
 
 void OnInit(SKSE::MessagingInterface::Message* a_msg)
 {
-	if (a_msg->type == SKSE::MessagingInterface::kDataLoaded) {
-		CRAFT::Distribute();
+	switch (a_msg->type) {
+	case SKSE::MessagingInterface::kPostLoad:
+		{
+			CRAFT::LoadSettings();
+			CRAFT::LoadOverwrites();
+		}
+		break;
+	case SKSE::MessagingInterface::kDataLoaded:
+			CRAFT::Distribute();
+		break;
+	default:
+		break;
 	}
 }
 
@@ -13,7 +23,8 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 	v.PluginVersion(Version::MAJOR);
 	v.PluginName("Crafting Recipe Distributor");
 	v.AuthorName("powerofthree");
-	v.UsesAddressLibrary(true);
+	v.UsesAddressLibrary();
+	v.UsesNoStructs();
 	v.CompatibleVersions({ SKSE::RUNTIME_LATEST });
 
 	return v;
@@ -22,7 +33,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
 {
 	a_info->infoVersion = SKSE::PluginInfo::kVersion;
-	a_info->name = Version::PROJECT.data();
+	a_info->name = "Crafting Recipe Distributor";
 	a_info->version = Version::MAJOR;
 
 	if (a_skse->IsEditor()) {
@@ -66,12 +77,9 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 {
 	InitializeLog();
 
-	logger::info("loaded plugin");
+	logger::info("Game version : {}", a_skse->RuntimeVersion().string());
 
 	SKSE::Init(a_skse);
-
-	CRAFT::LoadSettings();
-	CRAFT::LoadOverwrites();
 
 	const auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener(OnInit);
