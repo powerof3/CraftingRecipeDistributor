@@ -1,6 +1,8 @@
 # Crafting Recipe Distributor
 
 SKSE plugin that auto generates crafting and smelting recipes
+[SSE/AE](https://www.nexusmods.com/skyrimspecialedition/mods/52276)
+[VR](https://www.nexusmods.com/skyrimspecialedition/mods/72019)
 
 ## Requirements
 * [CMake](https://cmake.org/)
@@ -13,6 +15,14 @@ SKSE plugin that auto generates crafting and smelting recipes
 * [CommonLibSSE](https://github.com/powerof3/CommonLibSSE/tree/dev)
 	* You need to build from the powerof3/dev branch
 	* Add this as as an environment variable `CommonLibSSEPath`
+* [CommonLibVR](https://github.com/alandtse/CommonLibVR/tree/vr)
+	* Add this as as an environment variable `CommonLibVRPath` instead of /extern
+
+## User Requirements
+* [Address Library for SKSE](https://www.nexusmods.com/skyrimspecialedition/mods/32444)
+	* Needed for SSE/AE
+* [VR Address Library for SKSEVR](https://www.nexusmods.com/skyrimspecialedition/mods/58101)
+	* Needed for VR
 
 ## Register Visual Studio as a Generator
 * Open `x64 Native Tools Command Prompt`
@@ -23,7 +33,12 @@ SKSE plugin that auto generates crafting and smelting recipes
 ```
 git clone https://github.com/powerof3/CraftingRecipeDistributor.git
 cd CraftingRecipeDistributor
+# pull commonlib /extern to override the path settings
+git submodule init
+# to update submodules to checked in build
+git submodule update
 ```
+
 ### SSE
 ```
 cmake --preset vs2022-windows-vcpkg-se
@@ -33,6 +48,12 @@ cmake --build build --config Release
 ```
 cmake --preset vs2022-windows-vcpkg-ae
 cmake --build buildae --config Release
+```
+
+### VR
+```
+cmake --preset vs2022-windows-vcpkg-vr
+cmake --build buildvr --config Release
 ```
 
 ## License
