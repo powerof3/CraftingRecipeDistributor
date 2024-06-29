@@ -9,7 +9,6 @@
     "frozen",
     "mergemapper",
     "rsm-binary-io",
-    "srell",
     "spdlog",
     "unordered-dense",
     "xbyak"

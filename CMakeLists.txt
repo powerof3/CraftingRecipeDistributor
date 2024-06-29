@@ -136,7 +136,6 @@ endif()
 find_package(frozen CONFIG REQUIRED)
 find_package(unordered_dense CONFIG REQUIRED)
 
-find_path(SRELL_INCLUDE_DIRS "srell.hpp")
 find_path(MERGEMAPPER_INCLUDE_DIRS "MergeMapperPluginAPI.h")
 find_path(CLIBUTIL_INCLUDE_DIRS "CLibUtil/string.hpp")
 
@@ -191,7 +190,6 @@ target_include_directories(
 	PRIVATE
 		${CMAKE_CURRENT_BINARY_DIR}/include
 		${CMAKE_CURRENT_SOURCE_DIR}/src
-		${SRELL_INCLUDE_DIRS}
 		${MERGEMAPPER_INCLUDE_DIRS}
 		${CLIBUTIL_INCLUDE_DIRS}
 )
