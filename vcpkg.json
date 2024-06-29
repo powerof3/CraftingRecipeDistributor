@@ -1,15 +1,17 @@
 {
   "name": "crafting-recipe-distributor",
-  "version-string": "2.1.0",
+  "version-string": "3.0.0",
   "description": "",
   "homepage": "",
   "license": "MIT",
   "dependencies": [
-    "boost-stl-interfaces",
+    "clib-util",
     "frozen",
+    "mergemapper",
     "rsm-binary-io",
-    "simpleini",
+    "srell",
     "spdlog",
+    "unordered-dense",
     "xbyak"
   ]
 }

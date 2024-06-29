@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 set(NAME "po3_CraftingRecipeDistributor" CACHE STRING "")
-set(VERSION 2.1.0 CACHE STRING "")
-set(AE_VERSION 1)
+set(VERSION 3.0.0 CACHE STRING "")
 set(VR_VERSION 1)
+set(AE_VERSION 1)
 
 # ---- Options ----
 
@@ -123,6 +123,7 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 set(Boost_USE_STATIC_LIBS ON)
 
 # ---- Dependencies ----
+
 if (DEFINED CommonLibPath AND NOT ${CommonLibPath} STREQUAL "" AND IS_DIRECTORY ${CommonLibPath})
 	add_subdirectory(${CommonLibPath} ${CommonLibName})
 else ()
@@ -132,8 +133,12 @@ else ()
 	)
 endif()
 
-find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 find_package(frozen CONFIG REQUIRED)
+find_package(unordered_dense CONFIG REQUIRED)
+
+find_path(SRELL_INCLUDE_DIRS "srell.hpp")
+find_path(MERGEMAPPER_INCLUDE_DIRS "MergeMapperPluginAPI.h")
+find_path(CLIBUTIL_INCLUDE_DIRS "CLibUtil/string.hpp")
 
 # ---- Add source files ----
 
@@ -166,6 +171,7 @@ add_library(
 	${CMAKE_CURRENT_BINARY_DIR}/version.rc
 	.clang-format
 	.editorconfig
+	${MERGEMAPPER_INCLUDE_DIRS}/MergeMapperPluginAPI.cpp
 )
 
 target_compile_features(
@@ -185,7 +191,9 @@ target_include_directories(
 	PRIVATE
 		${CMAKE_CURRENT_BINARY_DIR}/include
 		${CMAKE_CURRENT_SOURCE_DIR}/src
-		${SIMPLEINI_INCLUDE_DIRS}
+		${SRELL_INCLUDE_DIRS}
+		${MERGEMAPPER_INCLUDE_DIRS}
+		${CLIBUTIL_INCLUDE_DIRS}
 )
 
 target_link_libraries(
@@ -193,6 +201,7 @@ target_link_libraries(
 	PRIVATE
 		${CommonLibName}::${CommonLibName}
 		frozen::frozen
+		unordered_dense::unordered_dense
 )
 
 target_precompile_headers(

@@ -2,17 +2,17 @@
 
 namespace CRAFT
 {
-	enum TYPE : std::uint32_t
+	enum class TYPE
 	{
 		kArmor = 0,
-		kWeap = 1,
-		kJewel = 2,
-		kClutter = 3
+		kWeap,
+		kJewel,
+		kClutter
 	};
 
 	using RawMap = frozen::map<std::string_view, RE::FormID, 61>;
-	using KeywordMap = std::map<std::string, std::pair<RE::TESForm*, std::uint16_t>>;
-	using FormIDMap = std::map<RE::FormID, std::pair<RE::TESForm*, std::uint16_t>>;
+	using KeywordMap = StringMap<std::pair<RE::TESForm*, std::uint16_t>>;
+	using FormIDMap = Map<RE::FormID, std::pair<RE::TESForm*, std::uint16_t>>;
 
 	using CustomINIData = std::vector<std::string>;
 
@@ -20,9 +20,9 @@ namespace CRAFT
 
 	inline void get_data(const RawMap& a_rawMap, KeywordMap& a_map)
 	{
-		for (auto& [keyword, formID] : a_rawMap) {
+		for (const auto& [keyword, formID] : a_rawMap) {
 			if (auto form = RE::TESForm::LookupByID(formID); form) {
-				a_map[std::string{ keyword }] = { form, static_cast<std::uint16_t>(0) };
+				a_map.insert_or_assign(keyword, std::make_pair(form, std::uint16_t(0)));
 			}
 		}
 	}
@@ -38,14 +38,20 @@ namespace CRAFT
 			try {
 				if (auto str = sections.at(0); str.contains(" ~ ")) {
 					if (auto formIDpair = string::split(str, " ~ "); !formIDpair.empty()) {
-						auto formID = string::lexical_cast<RE::FormID>(formIDpair.at(0), true);
-						auto esp = formIDpair.at(1);
-
-						createdItem = RE::TESDataHandler::GetSingleton()->LookupForm(formID, esp);
+						auto  formID = string::to_num<RE::FormID>(formIDpair.at(0), true);
+						auto& esp = formIDpair.at(1);
+						if (g_mergeMapperInterface) {
+							const auto [mergedModName, mergedFormID] = g_mergeMapperInterface->GetNewFormID(esp.c_str(), formID);
+							createdItem = RE::TESDataHandler::GetSingleton()->LookupForm(mergedFormID, mergedModName);
+						} else {
+							createdItem = RE::TESDataHandler::GetSingleton()->LookupForm(formID, esp);
+						}
 					}
-				} else {
-					auto formID = string::lexical_cast<RE::FormID>(str, true);
+				} else if (string::is_only_hex(str)) {
+					auto formID = string::to_num<RE::FormID>(str, true);
 					createdItem = RE::TESForm::LookupByID(formID);
+				} else {
+					createdItem = RE::TESForm::LookupByEditorID(str);
 				}
 			} catch (...) {
 			}
@@ -57,7 +63,7 @@ namespace CRAFT
 			//COUNT
 			std::uint16_t count = 0;
 			try {
-				count = string::lexical_cast<std::uint16_t>(sections.at(2));
+				count = string::to_num<std::uint16_t>(sections.at(2));
 			} catch (...) {
 			}
 
@@ -69,15 +75,23 @@ namespace CRAFT
 				for (auto& str : split_str) {
 					if (str.find(" ~ ") != std::string::npos) {
 						if (auto formIDpair = string::split(str, " ~ "); !formIDpair.empty()) {
-							auto formID = string::lexical_cast<RE::FormID>(formIDpair.at(0), true);
-							auto esp = formIDpair.at(1);
+							auto  formID = string::to_num<RE::FormID>(formIDpair.at(0), true);
+							auto& esp = formIDpair.at(1);
 
-							if (auto item = RE::TESDataHandler::GetSingleton()->LookupForm(formID, esp); item) {
+							RE::TESForm* item = nullptr;
+							if (g_mergeMapperInterface) {
+								const auto [mergedModName, mergedFormID] = g_mergeMapperInterface->GetNewFormID(esp.c_str(), formID);
+								item = RE::TESDataHandler::GetSingleton()->LookupForm(mergedFormID, mergedModName);
+							} else {
+								item = RE::TESDataHandler::GetSingleton()->LookupForm(formID, esp);
+							}
+
+							if (item) {
 								a_formidMap[item->GetFormID()] = { createdItem, count };
 							}
 						}
-					} else if (str.contains("0X") || str.contains("0x")) {
-						auto formID = string::lexical_cast<RE::FormID>(str, true);
+					} else if (string::is_only_hex(str)) {
+						auto formID = string::to_num<RE::FormID>(str, true);
 						if (auto item = RE::TESForm::LookupByID(formID); item) {
 							a_formidMap[item->GetFormID()] = { createdItem, count };
 						}
@@ -168,12 +182,12 @@ namespace CRAFT
 		};
 
 		inline CustomINIData customINIData;
-		inline KeywordMap keywordMap;
-		inline FormIDMap formidMap;
+		inline KeywordMap    keywordMap;
+		inline FormIDMap     formidMap;
 
 		inline RE::BGSKeyword* armorKywd;
 		inline RE::BGSKeyword* weapKywd;
-		inline RE::BGSPerk* arcanePerk;
+		inline RE::BGSPerk*    arcanePerk;
 
 		inline std::uint32_t weapCount = 0;
 		inline std::uint32_t armorCount = 0;
@@ -184,7 +198,7 @@ namespace CRAFT
 				return false;
 			}
 
-		    bool isArmor = a_item->IsArmor();
+			bool isArmor = a_item->IsArmor();
 
 			auto& arr = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::BGSConstructibleObject>();
 			if (std::ranges::any_of(arr, [&](const auto& constructibleObj) {
@@ -202,7 +216,7 @@ namespace CRAFT
 			}
 
 			const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::BGSConstructibleObject>();
-			auto constructibleObj = factory ? factory->Create() : nullptr;
+			auto       constructibleObj = factory ? factory->Create() : nullptr;
 
 			if (constructibleObj) {
 				constructibleObj->benchKeyword = isArmor ? armorKywd : weapKywd;
@@ -235,7 +249,7 @@ namespace CRAFT
 		}
 	}
 
-    namespace SMELT
+	namespace SMELT
 	{
 		inline constexpr RawMap rawMap = {
 			{ "ArmorMaterialBearStormcloak"sv, 0x800E4 },
@@ -306,16 +320,16 @@ namespace CRAFT
 		inline constexpr std::array<std::string_view, 7> ironMats = { "iron", "pick", "kettle", "lantern", "knife", "scissor", "scapel" };
 
 		inline CustomINIData customINIData;
-		inline KeywordMap keywordMap;
-		inline FormIDMap formidMap;
+		inline KeywordMap    keywordMap;
+		inline FormIDMap     formidMap;
 
 		inline RE::BGSKeyword* smeltKywd;
 		inline RE::BGSKeyword* tanningRackKywd;
 
-		inline std::uint16_t maxWeapAmount;
-		inline std::uint16_t maxArmorAmount;
-		inline std::uint16_t maxJewelryAmount;
-		inline std::uint16_t maxClutterAmount;
+		inline std::uint16_t maxWeapAmount = 0;
+		inline std::uint16_t maxArmorAmount = 0;
+		inline std::uint16_t maxJewelryAmount = 0;
+		inline std::uint16_t maxClutterAmount = 0;
 
 		inline std::uint32_t weapCount = 0;
 		inline std::uint32_t armorCount = 0;
@@ -325,7 +339,7 @@ namespace CRAFT
 		inline bool create_recipe(TYPE a_type, RE::TESBoundObject* a_item, RE::TESForm* a_ingot, std::uint16_t a_numConstructed, std::int32_t a_numRequired = 1)
 		{
 			const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::BGSConstructibleObject>();
-			auto constructibleObj = factory ? factory->Create() : nullptr;
+			auto       constructibleObj = factory ? factory->Create() : nullptr;
 
 			if (constructibleObj) {
 				constructibleObj->benchKeyword = a_ingot->GetFormID() == tanningRackMat ? tanningRackKywd : smeltKywd;
@@ -333,7 +347,7 @@ namespace CRAFT
 				constructibleObj->createdItem = a_ingot;
 
 				RE::TESConditionItem* equippedNode = nullptr;
-				if (a_type != kClutter) {
+				if (a_type != TYPE::kClutter) {
 					equippedNode = new RE::TESConditionItem;
 					equippedNode->next = nullptr;
 					equippedNode->data.flags.isOR = true;
@@ -366,8 +380,8 @@ namespace CRAFT
 					}
 
 					auto& arr = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::BGSConstructibleObject>();
-					auto result = std::ranges::find_if(arr,
-						[&](const auto& cobj) { return cobj && cobj->benchKeyword == FORGE::kywd && cobj->createdItem == item; });
+					auto  result = std::ranges::find_if(arr,
+						 [&](const auto& cobj) { return cobj && cobj->benchKeyword == FORGE::kywd && cobj->createdItem == item; });
 					if (result != arr.end()) {
 						auto craftRecipe = *result;
 						numConstructed = static_cast<std::uint16_t>(craftRecipe->requiredItems.CountObjectsInContainer(static_cast<RE::TESBoundObject*>(a_ingot)));
@@ -387,45 +401,46 @@ namespace CRAFT
 						} else if (itemGold > 0 && ingotGold > 0) {
 							numConstructed = static_cast<std::uint16_t>(itemGold * 0.5f / ingotGold);
 						}
-
-						std::uint16_t cap = 0;
-						switch (a_type) {
-						case kArmor:
-							cap = maxArmorAmount;
-							break;
-						case kWeap:
-							cap = maxWeapAmount;
-							break;
-						case kJewel:
-							cap = maxJewelryAmount;
-							break;
-						case kClutter:
-							cap = maxClutterAmount;
-							break;
-						}
-						if (cap > 0) {
-							numConstructed = std::clamp(numConstructed, static_cast<uint16_t>(1), cap);
-						} else if (numConstructed == 0) {
-							numConstructed = 1;
-						}
 					}
 				}
+
+				std::uint16_t cap = 0;
+				switch (a_type) {
+				case TYPE::kArmor:
+					cap = maxArmorAmount;
+					break;
+				case TYPE::kWeap:
+					cap = maxWeapAmount;
+					break;
+				case TYPE::kJewel:
+					cap = maxJewelryAmount;
+					break;
+				case TYPE::kClutter:
+					cap = maxClutterAmount;
+					break;
+				}
+				if (cap > 0) {
+					numConstructed = std::clamp(numConstructed, static_cast<uint16_t>(1), cap);
+				} else if (numConstructed == 0) {
+					numConstructed = 1;
+				}
+
 				constructibleObj->data.numConstructed = numConstructed;
 
 				generatedConstructibles.push_back(constructibleObj);
 
 				switch (a_type) {
-				case kArmor:
-                    armorCount++;
+				case TYPE::kArmor:
+					armorCount++;
 					break;
-				case kWeap:
-                    weapCount++;
+				case TYPE::kWeap:
+					weapCount++;
 					break;
-				case kJewel:
-                    jewelryCount++;
+				case TYPE::kJewel:
+					jewelryCount++;
 					break;
-				case kClutter:
-                    miscObjCount++;
+				case TYPE::kClutter:
+					miscObjCount++;
 					break;
 				}
 

@@ -6,52 +6,41 @@ namespace CRAFT
 	{
 		logger::info("{:*^30}", "OVERWRITES");
 
-		std::vector<std::string> configs;
-
-		auto constexpr folder = R"(Data\)";
-		for (const auto& entry : std::filesystem::directory_iterator(folder)) {
-			if (entry.exists() && entry.path().extension() == ".ini"sv) {
-				if (const auto path = entry.path().string(); path.find("_CRD") != std::string::npos) {
-					configs.push_back(path);
-				}
-			}
-		}
+		std::vector<std::string> configs = distribution::get_configs(R"(Data\)", "_CRD"sv);
 
 		if (configs.empty()) {
 			logger::warn("No .ini files with _CRD suffix were found within the Data folder, aborting...");
 			return;
 		}
 
-		std::ranges::sort(configs);
-
 		logger::info("{} matching inis found", configs.size());
 
-		const auto get_ini_data = [](CSimpleIniA& ini, const char* a_type, CustomINIData& a_iniData) {
+		constexpr auto get_ini_data = [](CSimpleIniA& ini, const char* a_type, CustomINIData& a_iniData) {
 			CSimpleIniA::TNamesDepend values;
 			ini.GetAllValues(a_type, "Recipe", values);
 			values.sort(CSimpleIniA::Entry::LoadOrder());
 
 			if (const auto size = values.size(); size > 0) {
-				logger::info("	{} entries found : {}", a_type, size);
+				logger::info("\t{} entries found : {}", a_type, size);
 
 				a_iniData.reserve(values.size());
 				for (auto& value : values) {
 					a_iniData.emplace_back(value.pItem);
 				}
 			} else {
-				logger::error("	no {} entries found", a_type);
+				logger::error("\tno {} entries found", a_type);
 			}
 		};
 
 		for (auto& path : configs) {
-			logger::info("ini : {}", path);
+			logger::info("\tINI : {}", path);
 
 			CSimpleIniA ini;
 			ini.SetUnicode();
 			ini.SetMultiKey();
 
 			if (const auto rc = ini.LoadFile(path.c_str()); rc < 0) {
-				logger::error("	couldn't read path");
+				logger::error("\t\tcouldn't read INI");
 				continue;
 			}
 
@@ -71,23 +60,16 @@ namespace CRAFT
 
 		ini.LoadFile(path);
 
-		SMELT::maxWeapAmount = string::lexical_cast<std::uint16_t>(ini.GetValue("SMELT", "Weapon cap", "0"));
-		ini.SetValue("SMELT", "Weapon cap", std::to_string(SMELT::maxWeapAmount).c_str(), ";maximum amount of ingots (or other materials) recieved when smelting weapons", true);
-
-		SMELT::maxArmorAmount = string::lexical_cast<std::uint16_t>(ini.GetValue("SMELT", "Armor cap", "0"));
-		ini.SetValue("SMELT", "Armor cap", std::to_string(SMELT::maxArmorAmount).c_str(), ";maximum amount of ingots (or other materials) recieved when smelting armor", true);
-
-		SMELT::maxJewelryAmount = string::lexical_cast<std::uint16_t>(ini.GetValue("SMELT", "Jewelry cap", "0"));
-		ini.SetValue("SMELT", "Jewelry cap", std::to_string(SMELT::maxJewelryAmount).c_str(), ";maximum amount of ingots (or other materials) recieved when smelting jewelry", true);
-
-		SMELT::maxClutterAmount = string::lexical_cast<std::uint16_t>(ini.GetValue("SMELT", "Clutter cap", "0"));
-		ini.SetValue("SMELT", "Clutter cap", std::to_string(SMELT::maxClutterAmount).c_str(), ";maximum amount of ingots (or other materials) recieved when smelting clutter", true);
+		ini::get_value(ini, SMELT::maxWeapAmount, "SMELT", "Weapon cap", ";maximum amount of ingots (or other materials) recieved when smelting weapons");
+		ini::get_value(ini, SMELT::maxArmorAmount, "SMELT", "Armor cap", ";maximum amount of ingots (or other materials) recieved when smelting armor");
+		ini::get_value(ini, SMELT::maxJewelryAmount, "SMELT", "Jewelry cap", ";maximum amount of ingots (or other materials) recieved when smelting jewelry");
+		ini::get_value(ini, SMELT::maxClutterAmount, "SMELT", "Clutter cap", ";maximum amount of ingots (or other materials) recieved when smelting clutter");
 
 		logger::info("SMELT");
-		logger::info("	max weapon cap : {}", SMELT::maxWeapAmount);
-		logger::info("	max armor cap : {}", SMELT::maxArmorAmount);
-		logger::info("	max jewelry cap : {}", SMELT::maxJewelryAmount);
-		logger::info("	max clutter cap : {}", SMELT::maxClutterAmount);
+		logger::info("\tmax weapon cap : {}", SMELT::maxWeapAmount);
+		logger::info("\tmax armor cap : {}", SMELT::maxArmorAmount);
+		logger::info("\tmax jewelry cap : {}", SMELT::maxJewelryAmount);
+		logger::info("\tmax clutter cap : {}", SMELT::maxClutterAmount);
 
 		(void)ini.SaveFile(path);
 	}
@@ -97,10 +79,10 @@ namespace CRAFT
 		if (const auto dataHandler = RE::TESDataHandler::GetSingleton(); dataHandler) {
 			logger::info("{:*^30}", "PROCESSING");
 
-            const auto ironIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5ACE4);
-            const auto dwemerIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0xDB8A2);
-            const auto goldIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5AD9E);
-            const auto silverIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5ACE3);
+			const auto ironIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5ACE4);
+			const auto dwemerIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0xDB8A2);
+			const auto goldIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5AD9E);
+			const auto silverIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5ACE3);
 
 			FORGE::kywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x00088105);             //CraftingSmithingForge
 			SMELT::smeltKywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x000A5CCE);        //CraftingSmithingSmelter
@@ -135,7 +117,7 @@ namespace CRAFT
 				if (const auto keywordForm = a_form->As<RE::BGSKeywordForm>(); keywordForm && keywordForm->keywords) {
 					std::span keywords(keywordForm->keywords, keywordForm->numKeywords);
 					for (auto& keyword : keywords | std::views::reverse) {
-						if (auto result = a_map.find(std::string(keyword->formEditorID)); result != a_map.end()) {
+						if (auto result = a_map.find(keyword->GetFormEditorID()); result != a_map.end()) {
 							return result;
 						}
 					}
@@ -145,7 +127,7 @@ namespace CRAFT
 
 			const auto create_recipes = [&](RE::TESBoundObject* a_form, TYPE a_type) {
 				bool didFormID = false;
-		
+
 				auto formid = a_form->GetFormID();
 				if (SMELT::formidMap.contains(formid)) {
 					if (SMELT::create_recipe(a_type, a_form, SMELT::formidMap[formid].first, SMELT::formidMap[formid].second)) {
@@ -185,7 +167,7 @@ namespace CRAFT
 
 			for (auto& armor : dataHandler->GetFormArray<RE::TESObjectARMO>()) {
 				if (armor && armor->GetPlayable()) {
-					auto name = std::string(armor->GetName());
+					std::string name = armor->GetName();
 					if (!name.empty()) {
 						if (!armor->HasKeywordString("ArmorJewelry"sv)) {
 							create_recipes(armor, TYPE::kArmor);
@@ -201,14 +183,14 @@ namespace CRAFT
 								continue;
 							}
 							RE::TESBoundObject* ingot = nullptr;
-							std::uint16_t numConstructed = 0;
+							std::uint16_t       numConstructed = 0;
 							if (auto result = get_keyword(armor, SMELT::keywordMap); result != SMELT::keywordMap.end()) {
 								auto& [keyword, ingotCount] = *result;
 								ingot = static_cast<RE::TESBoundObject*>(ingotCount.first);
 								numConstructed = ingotCount.second;
 							} else {
 								if (const auto templateArmor = armor->templateArmor; templateArmor) {
-									name = std::string(templateArmor->GetName());
+									name = templateArmor->GetName();
 								}
 								if (string::icontains(armor->worldModels[0].model, "gold") || string::icontains(name, "gold")) {
 									ingot = goldIngot;
@@ -218,7 +200,7 @@ namespace CRAFT
 							}
 							if (ingot) {
 								std::int32_t numRequired = 1;
-								
+
 								auto itemWeight = armor->GetWeight();
 								auto ingotWeight = ingot->GetWeight();
 								if (itemWeight == 0.0f) {
@@ -230,7 +212,7 @@ namespace CRAFT
 								if (itemWeight < ingotWeight) {
 									numRequired = static_cast<std::int32_t>(ingotWeight / itemWeight);
 								}
-								
+
 								SMELT::create_recipe(TYPE::kJewel, armor, ingot, numConstructed, numRequired);
 							}
 						}
@@ -253,7 +235,7 @@ namespace CRAFT
 							continue;
 						}
 						RE::TESBoundObject* ingot = nullptr;
-						std::uint16_t numConstructed = 0;
+						std::uint16_t       numConstructed = 0;
 						if (auto result = get_keyword(miscObj, SMELT::keywordMap); result != SMELT::keywordMap.end()) {
 							auto& [keyword, ingotCount] = *result;
 							ingot = static_cast<RE::TESBoundObject*>(ingotCount.first);
@@ -300,13 +282,13 @@ namespace CRAFT
 
 			logger::info("{:*^30}", "RESULT");
 			logger::info("SMELT");
-			logger::info("	{} weapon recipes added", SMELT::weapCount);
-			logger::info("	{} armor recipes added", SMELT::armorCount);
-			logger::info("	{} jewelry recipes added", SMELT::jewelryCount);
-			logger::info("	{} clutter recipes added", SMELT::miscObjCount);
+			logger::info("\t{} weapon recipes added", SMELT::weapCount);
+			logger::info("\t{} armor recipes added", SMELT::armorCount);
+			logger::info("\t{} jewelry recipes added", SMELT::jewelryCount);
+			logger::info("\t{} clutter recipes added", SMELT::miscObjCount);
 			logger::info("TEMPER");
-			logger::info("	{} weapon recipes added", TEMPER::weapCount);
-			logger::info("	{} armor recipes added", TEMPER::armorCount);
+			logger::info("\t{} weapon recipes added", TEMPER::weapCount);
+			logger::info("\t{} armor recipes added", TEMPER::armorCount);
 		}
 	}
 }

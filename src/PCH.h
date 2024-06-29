@@ -3,26 +3,48 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 
+#include <ranges>
+
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
 
-#include <ranges>
+#include <MergeMapperPluginAPI.h>
 
-#pragma warning(push)
-#include <spdlog/sinks/basic_file_sink.h>
+#include <ankerl/unordered_dense.h>
 #include <frozen/map.h>
-#include <SimpleIni.h>
-#pragma warning(pop)
+#include <spdlog/sinks/basic_file_sink.h>
+#include <srell.hpp>
+
+#include <CLibUtil/distribution.hpp>
+#include <CLibUtil/rng.hpp>
+#include <CLibUtil/string.hpp>
+#include <ClibUtil/simpleINI.hpp>
+
+#include <ClibUtil/editorID.hpp>
 
 #define DLLEXPORT __declspec(dllexport)
 
 namespace logger = SKSE::log;
-namespace numeric = SKSE::stl::numeric;
-namespace string = SKSE::stl::string;
-
 using namespace std::literals;
 
-using RNG = SKSE::stl::RNG;
+using namespace clib_util;
+
+template <class K, class D>
+using Map = ankerl::unordered_dense::map<K, D>;
+
+struct string_hash
+{
+	using is_transparent = void;  // enable heterogeneous overloads
+	using is_avalanching = void;  // mark class as high quality avalanching hash
+
+	[[nodiscard]] std::uint64_t operator()(std::string_view str) const noexcept
+	{
+		return ankerl::unordered_dense::hash<std::string_view>{}(str);
+	}
+};
+
+template <class D>
+using StringMap = ankerl::unordered_dense::segmented_map<std::string, D, string_hash, std::equal_to<>>;
 
 namespace stl
 {

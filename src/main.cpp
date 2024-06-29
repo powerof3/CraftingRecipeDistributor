@@ -9,8 +9,20 @@ void OnInit(SKSE::MessagingInterface::Message* a_msg)
 			CRAFT::LoadOverwrites();
 		}
 		break;
+	case SKSE::MessagingInterface::kPostPostLoad:
+		{
+			logger::info("{:*^30}", "MERGES");
+			MergeMapperPluginAPI::GetMergeMapperInterface001();
+			if (g_mergeMapperInterface) {
+				const auto version = g_mergeMapperInterface->GetBuildNumber();
+				logger::info("Got MergeMapper interface buildnumber {}", version);
+			} else {
+				logger::info("MergeMapper not detected");
+			}
+		}
+		break;
 	case SKSE::MessagingInterface::kDataLoaded:
-			CRAFT::Distribute();
+		CRAFT::Distribute();
 		break;
 	default:
 		break;
@@ -81,11 +93,11 @@ void InitializeLog()
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
+	SKSE::Init(a_skse);
+	
 	InitializeLog();
 
 	logger::info("Game version : {}", a_skse->RuntimeVersion().string());
-
-	SKSE::Init(a_skse);
 
 	const auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener(OnInit);
