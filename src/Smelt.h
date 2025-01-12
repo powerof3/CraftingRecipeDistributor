@@ -21,6 +21,8 @@ namespace CRAFT
 		std::uint16_t maxJewelryAmount{ 0 };
 		std::uint16_t maxClutterAmount{ 0 };
 
+		std::vector<std::string> bannedKeywords{ "MagicDisallowEnchanting" };
+
 		std::uint32_t weapCount{ 0 };
 		std::uint32_t armorCount{ 0 };
 		std::uint32_t jewelryCount{ 0 };

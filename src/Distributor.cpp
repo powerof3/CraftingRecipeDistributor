@@ -51,12 +51,14 @@ namespace CRAFT
 		ini::get_value(ini, smelt.maxArmorAmount, "SMELT", "Armor cap", ";maximum amount of ingots (or other materials) recieved when smelting armor");
 		ini::get_value(ini, smelt.maxJewelryAmount, "SMELT", "Jewelry cap", ";maximum amount of ingots (or other materials) recieved when smelting jewelry");
 		ini::get_value(ini, smelt.maxClutterAmount, "SMELT", "Clutter cap", ";maximum amount of ingots (or other materials) recieved when smelting clutter");
+		ini::get_value(ini, smelt.bannedKeywords, "SMELT", "Blacklisted Keywords", ";block items with these keywords from being smelted (keyword1,keyword2)", ",");
 
 		logger::info("SMELT");
 		logger::info("\tmax weapon cap : {}", smelt.maxWeapAmount);
 		logger::info("\tmax armor cap : {}", smelt.maxArmorAmount);
 		logger::info("\tmax jewelry cap : {}", smelt.maxJewelryAmount);
 		logger::info("\tmax clutter cap : {}", smelt.maxClutterAmount);
+		logger::info("\tblacklisted keywords : {}", string::join(smelt.bannedKeywords, ","));
 
 		void(ini.SaveFile(path));
 	}
