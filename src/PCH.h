@@ -6,6 +6,7 @@
 #include <ranges>
 
 #include "RE/Skyrim.h"
+#include "REX/REX/Singleton.h"
 #include "SKSE/SKSE.h"
 
 #include <MergeMapperPluginAPI.h>
@@ -24,9 +25,15 @@
 #define DLLEXPORT __declspec(dllexport)
 
 namespace logger = SKSE::log;
+using namespace clib_util;
 using namespace std::literals;
 
-using namespace clib_util;
+// for visting variants
+template <class... Ts>
+struct overload : Ts...
+{
+	using Ts::operator()...;
+};
 
 template <class K, class D>
 using Map = ankerl::unordered_dense::map<K, D>;

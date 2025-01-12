@@ -5,8 +5,8 @@ void OnInit(SKSE::MessagingInterface::Message* a_msg)
 	switch (a_msg->type) {
 	case SKSE::MessagingInterface::kPostLoad:
 		{
-			CRAFT::LoadSettings();
-			CRAFT::LoadOverwrites();
+			CRAFT::Manager::GetSingleton()->LoadSettings();
+			CRAFT::Manager::GetSingleton()->LoadOverwrites();
 		}
 		break;
 	case SKSE::MessagingInterface::kPostPostLoad:
@@ -22,7 +22,7 @@ void OnInit(SKSE::MessagingInterface::Message* a_msg)
 		}
 		break;
 	case SKSE::MessagingInterface::kDataLoaded:
-		CRAFT::Distribute();
+		CRAFT::Manager::GetSingleton()->Distribute();
 		break;
 	default:
 		break;
@@ -93,7 +93,7 @@ void InitializeLog()
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
-	SKSE::Init(a_skse);
+	SKSE::Init(a_skse, false);
 	
 	InitializeLog();
 
