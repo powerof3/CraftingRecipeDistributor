@@ -57,7 +57,7 @@ namespace CRAFT
 		std::vector<std::string> customINIData;
 		KeywordMap               keywordMap;
 		FormIDMap                formidMap;
-		Set<std::string>         blackList;
+		std::vector<std::string> blackList;
 		Set<RE::FormID>          blackListForms;
 
 	private:

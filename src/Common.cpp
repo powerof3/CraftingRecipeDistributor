@@ -38,7 +38,7 @@ namespace RE
 
 		return form;
 	}
-	
+
 	bool ArmorContainsModel(RE::TESObjectARMO* a_armor, std::string_view a_str)
 	{
 		return string::icontains(a_armor->worldModels[0].GetModel(), a_str);
@@ -82,9 +82,9 @@ namespace CRAFT
 		CSimpleIniA::TNamesDepend keys;
 		ini.GetAllKeys(a_type, keys);
 		for (const auto& key : keys) {
-			blackList.emplace(string::trim_copy(key.pItem));
+			blackList.emplace_back(string::trim_copy(key.pItem));
 		}
-		logger::info("\t{} entries : {}", a_type, blackList.size());
+		logger::info("\t\t{} entries : {}", a_type, blackList.size());
 	}
 
 	void CraftingBase::LoadINIData(const CSimpleIniA& ini, const char* a_type)
@@ -94,14 +94,14 @@ namespace CRAFT
 		values.sort(CSimpleIniA::Entry::LoadOrder());
 
 		if (const auto size = values.size(); size > 0) {
-			logger::info("\t{} entries : {}", a_type, size);
+			logger::info("\t\t{} entries : {}", a_type, size);
 
 			customINIData.reserve(values.size());
 			for (auto& value : values) {
 				customINIData.emplace_back(value.pItem);
 			}
 		} else {
-			logger::error("\tno {} entries", a_type);
+			logger::error("\t\t{} entries: 0", a_type);
 		}
 	}
 
@@ -133,7 +133,7 @@ namespace CRAFT
 				std::ranges::for_each(split_str, [](auto& str) { string::trim(str); });
 
 				auto formCount = FormCount(createdItem, count);
-				
+
 				for (const auto& str : split_str) {
 					std::visit(overload{
 								   [&](const RE::TESForm* a_item) {
@@ -152,12 +152,20 @@ namespace CRAFT
 
 	void CraftingBase::InitBlackList()
 	{
-		for (auto& entry : blackList) {
-			if (auto form = RE::ParseForm(entry)) {
-				blackListForms.emplace(form->GetFormID());
-			}
-		}
-		blackList.clear();
+		std::erase_if(blackList, [&](const auto& entry) {
+			bool erase = false;
+			std::visit(overload{
+						   [&](const RE::TESForm* a_item) {
+							   if (a_item && a_item->IsNot(RE::FormType::Keyword)) {
+								   blackListForms.emplace(a_item->GetFormID());
+								   erase = true;
+							   }
+						   },
+						   [&](const std::string&) {
+						   } },
+				RE::ParseFormType(entry));
+			return erase;
+		});
 	}
 
 	void CraftingBase::InitData(const RawMap& a_rawMap)
@@ -169,8 +177,8 @@ namespace CRAFT
 	}
 
 	bool CraftingBase::IsBlacklisted(RE::TESBoundObject* a_item) const
-	{	
-		return blackListForms.contains(a_item->GetFormID());
+	{
+		return !blackListForms.empty() && blackListForms.contains(a_item->GetFormID()) || !blackList.empty() && a_item->HasAnyKeywordByEditorID(blackList);
 	}
 
 	void CraftingBase::Clear()
