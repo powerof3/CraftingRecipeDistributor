@@ -38,6 +38,11 @@ namespace RE
 
 		return form;
 	}
+	
+	bool ArmorContainsModel(RE::TESObjectARMO* a_armor, std::string_view a_str)
+	{
+		return string::icontains(a_armor->worldModels[0].GetModel(), a_str);
+	}
 }
 
 namespace CRAFT
@@ -79,7 +84,7 @@ namespace CRAFT
 		for (const auto& key : keys) {
 			blackList.emplace(string::trim_copy(key.pItem));
 		}
-		logger::info("\tblacklist entries : {}", blackList.size());
+		logger::info("\t{} entries : {}", a_type, blackList.size());
 	}
 
 	void CraftingBase::LoadINIData(const CSimpleIniA& ini, const char* a_type)

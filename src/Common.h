@@ -4,6 +4,8 @@ namespace RE
 {
 	std::variant<RE::TESForm*, std::string> ParseFormType(const std::string& a_str);
 	RE::TESForm*                            ParseForm(const std::string& a_str);
+
+	bool ArmorContainsModel(RE::TESObjectARMO* a_armor, std::string_view a_str);
 }
 
 namespace CRAFT

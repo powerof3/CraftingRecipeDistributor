@@ -21,6 +21,7 @@ namespace CRAFT
 			CSimpleIniA ini;
 			ini.SetUnicode();
 			ini.SetMultiKey();
+			ini.SetAllowKeyOnly();
 
 			if (const auto rc = ini.LoadFile(path.c_str()); rc < 0) {
 				logger::error("\t\tcouldn't read INI");
@@ -29,6 +30,9 @@ namespace CRAFT
 
 			smelt.LoadINIData(ini, "SMELT");
 			temper.LoadINIData(ini, "TEMPER");
+
+			smelt.LoadBlackList(ini, "SMELT_BlackList");
+			temper.LoadBlackList(ini, "TEMPER_BlackList");
 		}
 	}
 
@@ -40,7 +44,6 @@ namespace CRAFT
 
 		CSimpleIniA ini;
 		ini.SetUnicode();
-		ini.SetAllowKeyOnly();
 
 		ini.LoadFile(path);
 
@@ -55,9 +58,7 @@ namespace CRAFT
 		logger::info("\tmax jewelry cap : {}", smelt.maxJewelryAmount);
 		logger::info("\tmax clutter cap : {}", smelt.maxClutterAmount);
 
-		smelt.LoadBlackList(ini, "SMELT_BlackList");
-		logger::info("TEMPER");
-		temper.LoadBlackList(ini, "TEMPER_BlackList");
+		void(ini.SaveFile(path));
 	}
 
 	void Manager::AddGeneratedConstructible(RE::BGSConstructibleObject* a_obj)
@@ -116,9 +117,9 @@ namespace CRAFT
 			if (const auto templateArmor = a_armor->templateArmor; templateArmor) {
 				name = templateArmor->GetName();
 			}
-			if (string::icontains(a_armor->worldModels[0].model, "gold") || string::icontains(name, "gold")) {
+			if (RE::ArmorContainsModel(a_armor, "gold") || string::icontains(name, "gold")) {
 				ingot = goldIngot;
-			} else if (string::icontains(a_armor->worldModels[0].model, "silver") || string::icontains(name, "silver")) {
+			} else if (RE::ArmorContainsModel(a_armor, "silver") || string::icontains(name, "silver")) {
 				ingot = silverIngot;
 			}
 		}
@@ -245,7 +246,7 @@ namespace CRAFT
 			}
 
 			std::ranges::copy(generatedConstructibles, std::back_inserter(dataHandler->GetFormArray<RE::BGSConstructibleObject>()));
-			
+
 			logger::info("{:*^30}", "RESULT");
 			logger::info("SMELT");
 			logger::info("\t{} weapon recipes added", smelt.weapCount);
