@@ -7,7 +7,6 @@ namespace CRAFT
 	class TEMPER : public CraftingBase
 	{
 	public:
-		void LookupForms();
 		void InitData();
 		bool CreateRecipe(RE::TESBoundObject* a_item);
 		bool CreateRecipe(RE::TESBoundObject* a_item, RE::TESForm* a_mat, std::uint16_t a_requiredNum);

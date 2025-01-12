@@ -191,6 +191,14 @@ namespace CRAFT
 		}
 	}
 
+	void Manager::Clear()
+	{
+		generatedConstructibles.clear();
+
+		smelt.Clear();
+		temper.Clear();
+	}
+
 	void Manager::Distribute()
 	{
 		if (const auto dataHandler = RE::TESDataHandler::GetSingleton(); dataHandler) {
@@ -237,8 +245,7 @@ namespace CRAFT
 			}
 
 			std::ranges::copy(generatedConstructibles, std::back_inserter(dataHandler->GetFormArray<RE::BGSConstructibleObject>()));
-			generatedConstructibles.clear();
-
+			
 			logger::info("{:*^30}", "RESULT");
 			logger::info("SMELT");
 			logger::info("\t{} weapon recipes added", smelt.weapCount);
@@ -248,6 +255,8 @@ namespace CRAFT
 			logger::info("TEMPER");
 			logger::info("\t{} weapon recipes added", temper.weapCount);
 			logger::info("\t{} armor recipes added", temper.armorCount);
+
+			Clear();
 		}
 	}
 }

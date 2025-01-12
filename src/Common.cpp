@@ -167,4 +167,13 @@ namespace CRAFT
 	{	
 		return blackListForms.contains(a_item->GetFormID());
 	}
+
+	void CraftingBase::Clear()
+	{
+		customINIData.clear();
+		keywordMap.map.clear();
+		formidMap.clear();
+		blackList.clear();
+		blackListForms.clear();
+	}
 }

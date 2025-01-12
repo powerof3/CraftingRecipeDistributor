@@ -49,6 +49,8 @@ namespace CRAFT
 
 		bool IsBlacklisted(RE::TESBoundObject* a_item) const;
 
+		void Clear();
+
 		// members
 		std::vector<std::string> customINIData;
 		KeywordMap               keywordMap;

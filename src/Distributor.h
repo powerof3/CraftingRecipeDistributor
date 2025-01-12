@@ -22,6 +22,8 @@ namespace CRAFT
 		void CreateJewelryRecipes(RE::TESObjectARMO* a_armor);
 		void CreateClutterRecipes(RE::TESObjectMISC* a_miscObj);
 
+		void Clear();
+
 		// members
 		RE::TESObjectMISC*                       ironIngot{};
 		RE::TESObjectMISC*                       dwemerIngot{};
