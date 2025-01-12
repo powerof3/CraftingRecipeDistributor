@@ -43,7 +43,7 @@ struct string_hash
 };
 
 template <class D>
-using StringMap = ankerl::unordered_dense::segmented_map<std::string, D, string_hash, std::equal_to<>>;
+using StringMap = ankerl::unordered_dense::map<std::string, D, string_hash, std::equal_to<>>;
 
 namespace stl
 {
