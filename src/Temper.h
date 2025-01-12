@@ -4,19 +4,15 @@
 
 namespace CRAFT
 {
-	class TEMPER
+	class TEMPER : public CraftingBase
 	{
 	public:
 		void LookupForms();
-		void LookupData();
+		void InitData();
 		bool CreateRecipe(RE::TESBoundObject* a_item);
 		bool CreateRecipe(RE::TESBoundObject* a_item, RE::TESForm* a_mat, std::uint16_t a_requiredNum);
 
 		// members
-		CustomINIData customINIData;
-		KeywordMap    keywordMap;
-		FormIDMap     formidMap;
-
 		RE::BGSKeyword* armorKywd{};
 		RE::BGSKeyword* weapKywd{};
 		RE::BGSPerk*    arcanePerk{};

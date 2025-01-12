@@ -1,100 +1,7 @@
 #include "Common.h"
 
-namespace CRAFT
+namespace RE
 {
-	FormCount::FormCount(RE::TESForm* a_form, std::uint16_t a_count) :
-		form(a_form),
-		count(a_count)
-	{}
-
-	FormCount::FormCount(RE::TESForm* a_form) :
-		FormCount(a_form, 0)
-	{}
-
-	void KeywordMap::Init(const RawMap& a_rawMap)
-	{
-		for (const auto& [keyword, formID] : a_rawMap) {
-			if (auto form = RE::TESForm::LookupByID(formID)) {
-				map.insert_or_assign(keyword, FormCount(form));
-			}
-		}
-	}
-	std::optional<FormCount> KeywordMap::GetData(RE::TESBoundObject* a_form)
-	{
-		if (const auto keywordForm = a_form->As<RE::BGSKeywordForm>(); keywordForm && keywordForm->keywords && keywordForm->numKeywords > 0) {
-			std::span keywords(keywordForm->keywords, keywordForm->numKeywords);
-			for (auto& keyword : keywords | std::views::reverse) {
-				if (auto result = map.find(keyword->GetFormEditorID()); result != map.end()) {
-					return result->second;
-				}
-			}
-		}
-		return std::nullopt;
-	}
-
-	void CustomINIData::LoadData(const CSimpleIniA& ini, const char* a_type)
-	{
-		CSimpleIniA::TNamesDepend values;
-		ini.GetAllValues(a_type, "Recipe", values);
-		values.sort(CSimpleIniA::Entry::LoadOrder());
-
-		if (const auto size = values.size(); size > 0) {
-			logger::info("\t{} entries found : {}", a_type, size);
-
-			data.reserve(values.size());
-			for (auto& value : values) {
-				data.emplace_back(value.pItem);
-			}
-		} else {
-			logger::error("\tno {} entries found", a_type);
-		}
-	}
-
-	void CustomINIData::LookupData(KeywordMap& a_keywordMap, FormIDMap& a_formidMap) const
-	{
-		for (const auto& value : data) {
-			auto sections = string::split(value, "|");
-			std::ranges::for_each(sections, [](auto& str) { string::trim(str); });
-
-			//[FORMID ~ ESP]
-			RE::TESForm* createdItem = nullptr;
-			if (!sections.empty()) {
-				createdItem = ParseForm(sections[0]);
-			}
-
-			if (!createdItem) {
-				continue;
-			}
-
-			//COUNT
-			std::uint16_t count = 0;
-			if (sections.size() > 2) {
-				count = string::to_num<std::uint16_t>(sections[2]);
-			}
-
-			//KEYWORDS
-			if (sections.size() > 1) {
-				auto split_str = string::split(sections[1], ",");
-				std::ranges::for_each(split_str, [](auto& str) { string::trim(str); });
-
-				auto formCount = FormCount(createdItem, count);
-				
-				for (const auto& str : split_str) {
-					std::visit(overload{
-								   [&](const RE::TESForm* a_item) {
-									   if (a_item) {
-										   a_formidMap[a_item->GetFormID()] = formCount;
-									   }
-								   },
-								   [&](const std::string& edid) {
-									   a_keywordMap.map[edid] = formCount;
-								   } },
-						ParseFormType(str));
-				}
-			}
-		}
-	}
-
 	std::variant<RE::TESForm*, std::string> ParseFormType(const std::string& a_str)
 	{
 		if (a_str.contains(" ~ ")) {
@@ -130,5 +37,134 @@ namespace CRAFT
 			ParseFormType(a_str));
 
 		return form;
+	}
+}
+
+namespace CRAFT
+{
+	FormCount::FormCount(RE::TESForm* a_form, std::uint16_t a_count) :
+		form(a_form),
+		count(a_count)
+	{}
+
+	FormCount::FormCount(RE::TESForm* a_form) :
+		FormCount(a_form, 0)
+	{}
+
+	void KeywordMap::Init(const RawMap& a_rawMap)
+	{
+		for (const auto& [keyword, formID] : a_rawMap) {
+			if (auto form = RE::TESForm::LookupByID(formID)) {
+				map.insert_or_assign(keyword, FormCount(form));
+			}
+		}
+	}
+	std::optional<FormCount> KeywordMap::GetData(RE::TESBoundObject* a_form)
+	{
+		if (const auto keywordForm = a_form->As<RE::BGSKeywordForm>(); keywordForm && keywordForm->keywords && keywordForm->numKeywords > 0) {
+			std::span keywords(keywordForm->keywords, keywordForm->numKeywords);
+			for (auto& keyword : keywords | std::views::reverse) {
+				if (auto result = map.find(keyword->GetFormEditorID()); result != map.end()) {
+					return result->second;
+				}
+			}
+		}
+		return std::nullopt;
+	}
+
+	void CraftingBase::LoadBlackList(const CSimpleIniA& ini, const char* a_type)
+	{
+		CSimpleIniA::TNamesDepend keys;
+		ini.GetAllKeys(a_type, keys);
+		for (const auto& key : keys) {
+			blackList.emplace(string::trim_copy(key.pItem));
+		}
+		logger::info("\tblacklist entries : {}", blackList.size());
+	}
+
+	void CraftingBase::LoadINIData(const CSimpleIniA& ini, const char* a_type)
+	{
+		CSimpleIniA::TNamesDepend values;
+		ini.GetAllValues(a_type, "Recipe", values);
+		values.sort(CSimpleIniA::Entry::LoadOrder());
+
+		if (const auto size = values.size(); size > 0) {
+			logger::info("\t{} entries : {}", a_type, size);
+
+			customINIData.reserve(values.size());
+			for (auto& value : values) {
+				customINIData.emplace_back(value.pItem);
+			}
+		} else {
+			logger::error("\tno {} entries", a_type);
+		}
+	}
+
+	void CraftingBase::InitINIData()
+	{
+		for (const auto& value : customINIData) {
+			auto sections = string::split(value, "|");
+			std::ranges::for_each(sections, [](auto& str) { string::trim(str); });
+
+			//[FORMID ~ ESP]
+			RE::TESForm* createdItem = nullptr;
+			if (!sections.empty()) {
+				createdItem = RE::ParseForm(sections[0]);
+			}
+
+			if (!createdItem) {
+				continue;
+			}
+
+			//COUNT
+			std::uint16_t count = 0;
+			if (sections.size() > 2) {
+				count = string::to_num<std::uint16_t>(sections[2]);
+			}
+
+			//KEYWORDS
+			if (sections.size() > 1) {
+				auto split_str = string::split(sections[1], ",");
+				std::ranges::for_each(split_str, [](auto& str) { string::trim(str); });
+
+				auto formCount = FormCount(createdItem, count);
+				
+				for (const auto& str : split_str) {
+					std::visit(overload{
+								   [&](const RE::TESForm* a_item) {
+									   if (a_item) {
+										   formidMap[a_item->GetFormID()] = formCount;
+									   }
+								   },
+								   [&](const std::string& edid) {
+									   keywordMap.map[edid] = formCount;
+								   } },
+						RE::ParseFormType(str));
+				}
+			}
+		}
+	}
+
+	void CraftingBase::InitBlackList()
+	{
+		for (auto& entry : blackList) {
+			if (auto form = RE::ParseForm(entry)) {
+				blackListForms.emplace(form->GetFormID());
+			}
+		}
+		blackList.clear();
+	}
+
+	void CraftingBase::InitData(const RawMap& a_rawMap)
+	{
+		keywordMap.Init(a_rawMap);
+
+		InitINIData();
+		InitBlackList();
+	}
+
+	bool CraftingBase::IsBlacklisted(RE::TESBoundObject* a_item) const
+	{	
+		return blackListForms.contains(a_item->GetFormID());
 	}
 }

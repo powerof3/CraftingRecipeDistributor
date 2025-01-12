@@ -4,17 +4,13 @@
 
 namespace CRAFT
 {
-	void TEMPER::LookupForms()
+	void TEMPER::InitData()
 	{
 		armorKywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x000ADB78);  //CraftingSmithingArmorTable
 		weapKywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x00088108);   //CraftingSmithingSharpeningWheel
 		arcanePerk = RE::TESForm::LookupByID<RE::BGSPerk>(0x0005218E);    //ArcaneBlacksmith
-	}
-
-	void TEMPER::LookupData()
-	{
-		keywordMap.Init(rawMap);
-		customINIData.LookupData(keywordMap, formidMap);
+		
+		CraftingBase::InitData(rawMap);
 	}
 
 	bool TEMPER::CreateRecipe(RE::TESBoundObject* a_item)
@@ -31,7 +27,7 @@ namespace CRAFT
 
 	bool TEMPER::CreateRecipe(RE::TESBoundObject* a_item, RE::TESForm* a_mat, std::uint16_t a_requiredNum)
 	{
-		if (a_item == a_mat) {
+		if (a_item == a_mat || IsBlacklisted(a_item)) {
 			return false;
 		}
 

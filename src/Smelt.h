@@ -4,19 +4,14 @@
 
 namespace CRAFT
 {
-	class SMELT
+	class SMELT : public CraftingBase
 	{
 	public:
-		void LookupForms();
-		void LookupData();
+		void InitData();
 		bool CreateRecipe(TYPE a_type, RE::TESBoundObject* a_item, std::int32_t a_numRequired = 1);
 		bool CreateRecipe(TYPE a_type, RE::TESBoundObject* a_item, RE::TESForm* a_ingot, std::uint16_t a_numConstructed, std::int32_t a_numRequired = 1);
 
 		// members
-		CustomINIData customINIData;
-		KeywordMap    keywordMap;
-		FormIDMap     formidMap;
-
 		RE::BGSKeyword* smeltKywd{};
 		RE::BGSKeyword* tanningRackKywd{};
 		RE::BGSKeyword* forgeKywd{};

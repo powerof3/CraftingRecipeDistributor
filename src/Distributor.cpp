@@ -27,8 +27,8 @@ namespace CRAFT
 				continue;
 			}
 
-			smelt.customINIData.LoadData(ini, "SMELT");
-			temper.customINIData.LoadData(ini, "TEMPER");
+			smelt.LoadINIData(ini, "SMELT");
+			temper.LoadINIData(ini, "TEMPER");
 		}
 	}
 
@@ -40,6 +40,7 @@ namespace CRAFT
 
 		CSimpleIniA ini;
 		ini.SetUnicode();
+		ini.SetAllowKeyOnly();
 
 		ini.LoadFile(path);
 
@@ -54,7 +55,9 @@ namespace CRAFT
 		logger::info("\tmax jewelry cap : {}", smelt.maxJewelryAmount);
 		logger::info("\tmax clutter cap : {}", smelt.maxClutterAmount);
 
-		(void)ini.SaveFile(path);
+		smelt.LoadBlackList(ini, "SMELT_BlackList");
+		logger::info("TEMPER");
+		temper.LoadBlackList(ini, "TEMPER_BlackList");
 	}
 
 	void Manager::AddGeneratedConstructible(RE::BGSConstructibleObject* a_obj)
@@ -62,18 +65,15 @@ namespace CRAFT
 		generatedConstructibles.push_back(a_obj);
 	}
 
-	void Manager::LookupForms()
+	void Manager::InitData()
 	{
 		ironIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5ACE4);
 		dwemerIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0xDB8A2);
 		goldIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5AD9E);
 		silverIngot = RE::TESForm::LookupByID<RE::TESObjectMISC>(0x5ACE3);
 
-		smelt.LookupForms();
-		smelt.LookupData();
-
-		temper.LookupForms();
-		temper.LookupData();
+		smelt.InitData();
+		temper.InitData();
 	}
 
 	void Manager::CreateStandardRecipes(TYPE a_type, RE::TESBoundObject* a_form)
@@ -194,7 +194,7 @@ namespace CRAFT
 	void Manager::Distribute()
 	{
 		if (const auto dataHandler = RE::TESDataHandler::GetSingleton(); dataHandler) {
-			LookupForms();
+			InitData();
 
 			// patch cobjs from being shown unless player has required items?
 			for (auto& cobj : dataHandler->GetFormArray<RE::BGSConstructibleObject>()) {

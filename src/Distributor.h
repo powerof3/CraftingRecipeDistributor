@@ -16,7 +16,7 @@ namespace CRAFT
 		void AddGeneratedConstructible(RE::BGSConstructibleObject* a_obj);
 
 	private:
-		void LookupForms();
+		void InitData();
 
 		void CreateStandardRecipes(TYPE a_type, RE::TESBoundObject* a_form);
 		void CreateJewelryRecipes(RE::TESObjectARMO* a_armor);

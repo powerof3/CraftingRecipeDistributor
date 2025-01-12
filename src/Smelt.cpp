@@ -4,17 +4,13 @@
 
 namespace CRAFT
 {
-	void SMELT::LookupForms()
+	void SMELT::InitData()
 	{
 		forgeKywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x00088105);        //CraftingSmithingForge
 		smeltKywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x000A5CCE);        //CraftingSmithingSmelter
 		tanningRackKywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x0007866A);  //CraftingSmithingTanningRack
-	}
-
-	void SMELT::LookupData()
-	{
-		keywordMap.Init(rawMap);
-		customINIData.LookupData(keywordMap, formidMap);
+		
+		CraftingBase::InitData(rawMap);
 	}
 
 	bool SMELT::CreateRecipe(TYPE a_type, RE::TESBoundObject* a_item, std::int32_t a_numRequired)
@@ -31,6 +27,10 @@ namespace CRAFT
 
 	bool SMELT::CreateRecipe(TYPE a_type, RE::TESBoundObject* a_item, RE::TESForm* a_ingot, std::uint16_t a_numConstructed, std::int32_t a_numRequired)
 	{
+		if (IsBlacklisted(a_item)) {
+			return false;
+		}
+		
 		const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::BGSConstructibleObject>();
 
 		if (auto constructibleObj = factory ? factory->Create() : nullptr) {

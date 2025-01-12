@@ -1,5 +1,11 @@
 #pragma once
 
+namespace RE
+{
+	std::variant<RE::TESForm*, std::string> ParseFormType(const std::string& a_str);
+	RE::TESForm*                            ParseForm(const std::string& a_str);
+}
+
 namespace CRAFT
 {
 	enum class TYPE
@@ -9,7 +15,7 @@ namespace CRAFT
 		kJewel,
 		kClutter
 	};
-	
+
 	struct FormCount
 	{
 		FormCount() = default;
@@ -33,15 +39,25 @@ namespace CRAFT
 		StringMap<FormCount> map{};
 	};
 
-	struct CustomINIData
+	class CraftingBase
 	{
-		void LoadData(const CSimpleIniA& ini, const char* a_type);
-		void LookupData(KeywordMap& a_keywordMap, FormIDMap& a_formidMap) const;
+	public:
+		void LoadBlackList(const CSimpleIniA& ini, const char* a_type);
+		void LoadINIData(const CSimpleIniA& ini, const char* a_type);
+
+		void InitData(const RawMap& a_rawMap);
+
+		bool IsBlacklisted(RE::TESBoundObject* a_item) const;
 
 		// members
-		std::vector<std::string> data;
-	};
+		std::vector<std::string> customINIData;
+		KeywordMap               keywordMap;
+		FormIDMap                formidMap;
+		Set<std::string>         blackList;
+		Set<RE::FormID>          blackListForms;
 
-	std::variant<RE::TESForm*, std::string> ParseFormType(const std::string& a_str);
-	RE::TESForm*                            ParseForm(const std::string& a_str);
+	private:
+		void InitINIData();
+		void InitBlackList();
+	};
 }
