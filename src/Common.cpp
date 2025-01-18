@@ -153,18 +153,11 @@ namespace CRAFT
 	void CraftingBase::InitBlackList()
 	{
 		std::erase_if(blackList, [&](const auto& entry) {
-			bool erase = false;
-			std::visit(overload{
-						   [&](const RE::TESForm* a_item) {
-							   if (a_item && a_item->IsNot(RE::FormType::Keyword)) {
-								   blackListForms.emplace(a_item->GetFormID());
-								   erase = true;
-							   }
-						   },
-						   [&](const std::string&) {
-						   } },
-				RE::ParseFormType(entry));
-			return erase;
+			if (auto item = RE::ParseForm(entry); item && item->IsNot(RE::FormType::Keyword)) {
+				blackListForms.emplace(item->GetFormID());
+				return true;
+			}
+			return false;
 		});
 	}
 
