@@ -53,7 +53,7 @@ namespace CRAFT
 	{}
 
 	FormCount::FormCount(RE::TESForm* a_form) :
-		FormCount(a_form, 1)
+		FormCount(a_form, 0)
 	{}
 
 	void KeywordMap::Init(const RawMap& a_rawMap)
@@ -126,7 +126,7 @@ namespace CRAFT
 			}
 
 			//COUNT
-			std::uint16_t count = 1;
+			std::uint16_t count = 0;
 			if (sections.size() > 2) {
 				count = string::to_num<std::uint16_t>(sections[2]);
 			}

@@ -31,6 +31,11 @@ namespace CRAFT
 			return false;
 		}
 
+		auto requiredNum = a_requiredNum;
+		if (requiredNum == 0) {
+			requiredNum = 1;
+		}
+
 		bool       isArmor = a_item->IsArmor();
 		const auto benchKeyword = isArmor ? armorKywd : weapKywd;
 
@@ -59,7 +64,7 @@ namespace CRAFT
 
 		if (auto constructibleObj = factory ? factory->Create() : nullptr) {
 			constructibleObj->benchKeyword = benchKeyword;
-			constructibleObj->requiredItems.AddObjectToContainer(static_cast<RE::TESBoundObject*>(a_mat), a_requiredNum, nullptr);
+			constructibleObj->requiredItems.AddObjectToContainer(static_cast<RE::TESBoundObject*>(a_mat), requiredNum, nullptr);
 			constructibleObj->createdItem = a_item;
 
 			auto perkNode = new RE::TESConditionItem;
