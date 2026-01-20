@@ -9,7 +9,7 @@ namespace CRAFT
 		armorKywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x000ADB78);  //CraftingSmithingArmorTable
 		weapKywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x00088108);   //CraftingSmithingSharpeningWheel
 		arcanePerk = RE::TESForm::LookupByID<RE::BGSPerk>(0x0005218E);    //ArcaneBlacksmith
-		
+
 		CraftingBase::InitData(rawMap);
 	}
 
@@ -31,11 +31,19 @@ namespace CRAFT
 			return false;
 		}
 
-		bool isArmor = a_item->IsArmor();
+		bool       isArmor = a_item->IsArmor();
+		const auto benchKeyword = isArmor ? armorKywd : weapKywd;
 
-		if (auto& arr = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::BGSConstructibleObject>(); std::ranges::any_of(arr, [&](const auto& constructibleObj) {
-				return constructibleObj && constructibleObj->benchKeyword == (isArmor ? armorKywd : weapKywd) && constructibleObj->createdItem == a_item;
-			})) {
+		bool skipRecipe = false;
+		Manager::GetSingleton()->ForEachConstructible([&](const auto& cobj) {
+			if (cobj && cobj->benchKeyword == benchKeyword && cobj->createdItem == a_item) {
+				skipRecipe = true;
+				return RE::BSContainer::ForEachResult::kStop;
+			}
+			return RE::BSContainer::ForEachResult::kContinue;
+		});
+
+		if (skipRecipe) {
 			return false;
 		}
 
@@ -50,7 +58,7 @@ namespace CRAFT
 		const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::BGSConstructibleObject>();
 
 		if (auto constructibleObj = factory ? factory->Create() : nullptr) {
-			constructibleObj->benchKeyword = isArmor ? armorKywd : weapKywd;
+			constructibleObj->benchKeyword = benchKeyword;
 			constructibleObj->requiredItems.AddObjectToContainer(static_cast<RE::TESBoundObject*>(a_mat), a_requiredNum, nullptr);
 			constructibleObj->createdItem = a_item;
 

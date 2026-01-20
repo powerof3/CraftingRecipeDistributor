@@ -9,7 +9,7 @@ namespace CRAFT
 		forgeKywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x00088105);        //CraftingSmithingForge
 		smeltKywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x000A5CCE);        //CraftingSmithingSmelter
 		tanningRackKywd = RE::TESForm::LookupByID<RE::BGSKeyword>(0x0007866A);  //CraftingSmithingTanningRack
-		
+
 		CraftingBase::InitData(rawMap);
 	}
 
@@ -30,7 +30,7 @@ namespace CRAFT
 		if (IsBlacklisted(a_item)) {
 			return false;
 		}
-		
+
 		const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::BGSConstructibleObject>();
 
 		if (auto constructibleObj = factory ? factory->Create() : nullptr) {
@@ -71,13 +71,13 @@ namespace CRAFT
 					item = weap;
 				}
 
-				auto& arr = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::BGSConstructibleObject>();
-				if (auto result = std::ranges::find_if(arr,
-						[&](const auto& cobj) { return cobj && cobj->benchKeyword == forgeKywd && cobj->createdItem == item; });
-					result != arr.end()) {
-					auto craftRecipe = *result;
-					numConstructed = static_cast<std::uint16_t>(craftRecipe->requiredItems.CountObjectsInContainer(static_cast<RE::TESBoundObject*>(a_ingot)));
-				}
+				Manager::GetSingleton()->ForEachConstructible([&](const auto& cobj) {
+					if (cobj && cobj->benchKeyword == forgeKywd && cobj->createdItem == item) {
+						numConstructed = static_cast<std::uint16_t>(cobj->requiredItems.GetObjectCount(static_cast<RE::TESBoundObject*>(a_ingot)));
+						return RE::BSContainer::ForEachResult::kStop;
+					}
+					return RE::BSContainer::ForEachResult::kContinue;
+				});
 
 				if (numConstructed == 0) {
 					auto itemGold = item->GetGoldValue();
@@ -110,6 +110,8 @@ namespace CRAFT
 			case TYPE::kClutter:
 				cap = maxClutterAmount;
 				break;
+			default:
+				std::unreachable();
 			}
 			if (cap > 0) {
 				numConstructed = std::clamp(numConstructed, static_cast<uint16_t>(1), cap);
@@ -134,6 +136,8 @@ namespace CRAFT
 			case TYPE::kClutter:
 				miscObjCount++;
 				break;
+			default:
+				std::unreachable();
 			}
 
 			return true;

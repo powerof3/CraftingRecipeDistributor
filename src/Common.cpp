@@ -53,7 +53,7 @@ namespace CRAFT
 	{}
 
 	FormCount::FormCount(RE::TESForm* a_form) :
-		FormCount(a_form, 0)
+		FormCount(a_form, 1)
 	{}
 
 	void KeywordMap::Init(const RawMap& a_rawMap)
@@ -66,15 +66,19 @@ namespace CRAFT
 	}
 	std::optional<FormCount> KeywordMap::GetData(RE::TESBoundObject* a_form)
 	{
-		if (const auto keywordForm = a_form->As<RE::BGSKeywordForm>(); keywordForm && keywordForm->keywords && keywordForm->numKeywords > 0) {
-			std::span keywords(keywordForm->keywords, keywordForm->numKeywords);
-			for (auto& keyword : keywords | std::views::reverse) {
-				if (auto result = map.find(keyword->GetFormEditorID()); result != map.end()) {
-					return result->second;
+		std::optional<FormCount> formCount = std::nullopt;
+
+		if (const auto keywordForm = a_form->As<RE::BGSKeywordForm>()) {
+			keywordForm->ForEachKeyword([&](RE::BGSKeyword* a_keyword) {
+				if (auto result = map.find(a_keyword->GetFormEditorID()); result != map.end()) {
+					formCount = result->second;
+					return RE::BSContainer::ForEachResult::kStop;
 				}
-			}
+				return RE::BSContainer::ForEachResult::kContinue;
+			});
 		}
-		return std::nullopt;
+
+		return formCount;
 	}
 
 	void CraftingBase::LoadBlackList(const CSimpleIniA& ini, const char* a_type)
@@ -122,7 +126,7 @@ namespace CRAFT
 			}
 
 			//COUNT
-			std::uint16_t count = 0;
+			std::uint16_t count = 1;
 			if (sections.size() > 2) {
 				count = string::to_num<std::uint16_t>(sections[2]);
 			}
@@ -138,11 +142,19 @@ namespace CRAFT
 					std::visit(overload{
 								   [&](const RE::TESForm* a_item) {
 									   if (a_item) {
-										   formidMap[a_item->GetFormID()] = formCount;
+										   if (a_item->Is(RE::FormType::Keyword)) {
+											   keywordMap.map[a_item->GetFormEditorID()] = formCount;
+										   } else {
+											   formidMap[a_item->GetFormID()] = formCount;										   
+										   }
 									   }
 								   },
 								   [&](const std::string& edid) {
-									   keywordMap.map[edid] = formCount;
+									   if (auto form = RE::TESForm::LookupByEditorID(edid); form && form->IsNot(RE::FormType::Keyword)) {
+										   formidMap[form->GetFormID()] = formCount;
+									   } else {
+										   keywordMap.map[edid] = formCount;
+									   }
 								   } },
 						RE::ParseFormType(str));
 				}
@@ -177,9 +189,14 @@ namespace CRAFT
 	void CraftingBase::Clear()
 	{
 		customINIData.clear();
+		customINIData.shrink_to_fit();
+
 		keywordMap.map.clear();
 		formidMap.clear();
+
 		blackList.clear();
+		blackList.shrink_to_fit();
+
 		blackListForms.clear();
 	}
 }

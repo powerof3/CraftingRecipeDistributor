@@ -13,6 +13,8 @@ namespace CRAFT
 		void LoadOverwrites();
 		void Distribute();
 
+		void ForEachConstructible(const std::function<RE::BSContainer::ForEachResult(RE::BGSConstructibleObject*)>& a_fn);
+
 		void AddGeneratedConstructible(RE::BGSConstructibleObject* a_obj);
 
 	private:
@@ -31,6 +33,7 @@ namespace CRAFT
 		RE::TESObjectMISC*                       silverIngot{};
 		TEMPER                                   temper;
 		SMELT                                    smelt;
+		std::vector<RE::BGSConstructibleObject*> vanillaConstructibles{};
 		std::vector<RE::BGSConstructibleObject*> generatedConstructibles{};
 
 		static constexpr std::array<std::string_view, 7> ironMats = { "iron", "pick", "kettle", "lantern", "knife", "scissor", "scapel" };

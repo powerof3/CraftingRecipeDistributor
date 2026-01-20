@@ -1,6 +1,6 @@
 {
   "name": "crafting-recipe-distributor",
-  "version-string": "4.0.1",
+  "version-string": "4.1.0",
   "description": "",
   "homepage": "",
   "license": "MIT",
@@ -13,5 +13,5 @@
     "unordered-dense",
     "xbyak"
   ],
-  "builtin-baseline": "401edd4e93917851f003f88c0fed03d20eba47bc"
+  "builtin-baseline": "14bb451131ccf6be50a63a8d9dfe7980e46b5958"
 }

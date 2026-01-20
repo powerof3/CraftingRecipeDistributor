@@ -30,7 +30,7 @@ namespace CRAFT
 
 			smelt.LoadINIData(ini, "SMELT");
 			smelt.LoadBlackList(ini, "SMELT_BlackList");
-			
+
 			temper.LoadINIData(ini, "TEMPER");
 			temper.LoadBlackList(ini, "TEMPER_BlackList");
 		}
@@ -75,6 +75,12 @@ namespace CRAFT
 
 		smelt.InitData();
 		temper.InitData();
+
+		const auto& cobjArray = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::BGSConstructibleObject>();
+		vanillaConstructibles.reserve(cobjArray.size());
+		for (const auto& cobj : cobjArray) {
+			vanillaConstructibles.emplace_back(cobj);
+		}
 	}
 
 	void Manager::CreateStandardRecipes(TYPE a_type, RE::TESBoundObject* a_form)
@@ -194,7 +200,11 @@ namespace CRAFT
 
 	void Manager::Clear()
 	{
+		vanillaConstructibles.clear();
+		vanillaConstructibles.shrink_to_fit();
+
 		generatedConstructibles.clear();
+		generatedConstructibles.shrink_to_fit();
 
 		smelt.Clear();
 		temper.Clear();
@@ -206,7 +216,7 @@ namespace CRAFT
 			InitData();
 
 			// patch cobjs from being shown unless player has required items?
-			for (auto& cobj : dataHandler->GetFormArray<RE::BGSConstructibleObject>()) {
+			for (auto& cobj : vanillaConstructibles) {
 				if (cobj && cobj->benchKeyword == smelt.smeltKywd) {
 					const auto obj = cobj->requiredItems.GetContainerObjectAt(0);
 					if (obj.has_value() && cobj->conditions.head == nullptr) {
@@ -222,27 +232,34 @@ namespace CRAFT
 				}
 			}
 
+			constexpr auto is_valid_form = [](RE::TESForm* a_form) {
+				return a_form != nullptr && a_form->GetPlayable() && !string::is_empty(a_form->GetName());
+			};
+
 			// generate recipes
 			for (auto& weapon : dataHandler->GetFormArray<RE::TESObjectWEAP>()) {
-				if (std::string_view name = weapon && weapon->GetPlayable() ? weapon->GetName() : std::string_view{}; !name.empty()) {
-					CreateStandardRecipes(TYPE::kWeap, weapon);
+				if (!is_valid_form(weapon)) {
+					continue;
 				}
+				CreateStandardRecipes(TYPE::kWeap, weapon);
 			}
 
 			for (auto& armor : dataHandler->GetFormArray<RE::TESObjectARMO>()) {
-				if (std::string_view name = armor && armor->GetPlayable() ? armor->GetName() : std::string_view{}; !name.empty()) {
-					if (!armor->HasKeywordString("ArmorJewelry"sv)) {
-						CreateStandardRecipes(TYPE::kArmor, armor);
-					} else {
-						CreateJewelryRecipes(armor);
-					}
+				if (!is_valid_form(armor)) {
+					continue;
+				}
+				if (!armor->HasKeywordString("ArmorJewelry"sv)) {
+					CreateStandardRecipes(TYPE::kArmor, armor);
+				} else {
+					CreateJewelryRecipes(armor);
 				}
 			}
 
 			for (auto& miscObj : dataHandler->GetFormArray<RE::TESObjectMISC>()) {
-				if (std::string_view name = miscObj && miscObj->GetPlayable() ? miscObj->GetName() : std::string_view{}; !name.empty()) {
-					CreateClutterRecipes(miscObj);
+				if (!is_valid_form(miscObj)) {
+					continue;
 				}
+				CreateClutterRecipes(miscObj);
 			}
 
 			std::ranges::copy(generatedConstructibles, std::back_inserter(dataHandler->GetFormArray<RE::BGSConstructibleObject>()));
@@ -258,6 +275,15 @@ namespace CRAFT
 			logger::info("\t{} armor recipes added", temper.armorCount);
 
 			Clear();
+		}
+	}
+
+	void Manager::ForEachConstructible(const std::function<RE::BSContainer::ForEachResult(RE::BGSConstructibleObject*)>& a_fn)
+	{
+		for (auto& cobj : vanillaConstructibles) {
+			if (a_fn(cobj) == RE::BSContainer::ForEachResult::kStop) {
+				break;
+			}
 		}
 	}
 }
