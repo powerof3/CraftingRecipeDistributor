@@ -58,24 +58,26 @@ namespace CRAFT
 
 	void KeywordMap::Init(const RawMap& a_rawMap)
 	{
-		for (const auto& [keyword, formID] : a_rawMap) {
-			if (auto form = RE::TESForm::LookupByID(formID)) {
+		for (const auto& [keyword, edidID] : a_rawMap) {
+			if (auto form = RE::TESForm::LookupByEditorID(edidID)) {
 				map.insert_or_assign(keyword, FormCount(form));
 			}
 		}
 	}
+
 	std::optional<FormCount> KeywordMap::GetData(RE::TESBoundObject* a_form)
 	{
 		std::optional<FormCount> formCount = std::nullopt;
 
 		if (const auto keywordForm = a_form->As<RE::BGSKeywordForm>()) {
-			keywordForm->ForEachKeyword([&](RE::BGSKeyword* a_keyword) {
-				if (auto result = map.find(a_keyword->GetFormEditorID()); result != map.end()) {
-					formCount = result->second;
-					return RE::BSContainer::ForEachResult::kStop;
+			if (keywordForm->keywords && keywordForm->numKeywords > 0) {
+				std::span keywords(keywordForm->keywords, keywordForm->numKeywords);
+				for (auto& keyword : keywords | std::views::reverse) {
+					if (auto result = map.find(keyword->GetFormEditorID()); result != map.end()) {
+						return result->second;
+					}
 				}
-				return RE::BSContainer::ForEachResult::kContinue;
-			});
+			}
 		}
 
 		return formCount;

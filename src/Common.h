@@ -29,8 +29,8 @@ namespace CRAFT
 		std::uint16_t count;
 	};
 
-	using RawMap = frozen::map<std::string_view, RE::FormID, 61>;
-	using FormIDMap = Map<RE::FormID, FormCount>;
+	using RawMap = frozen::map<std::string_view, std::string_view, 61>; // keyword/material
+	using FormIDMap = Map<RE::FormID, FormCount>; 
 
 	struct KeywordMap
 	{
