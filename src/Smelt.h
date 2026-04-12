@@ -20,6 +20,7 @@ namespace CRAFT
 		std::uint16_t maxArmorAmount{ 0 };
 		std::uint16_t maxJewelryAmount{ 0 };
 		std::uint16_t maxClutterAmount{ 0 };
+		bool          autoCap{ false };  // if true, output is floor(craftingCost / 2), min 1
 
 		std::uint32_t weapCount{ 0 };
 		std::uint32_t armorCount{ 0 };
