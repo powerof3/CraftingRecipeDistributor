@@ -94,6 +94,14 @@ namespace CRAFT
 						numConstructed = static_cast<std::uint16_t>(itemGold * 0.5f / ingotGold);
 					}
 				}
+
+				// Auto cap: halve the computed crafting cost (floor), minimum 1.
+				// Prevents lossless craft->smelt->craft loops when no manual cap is set.
+				// Only applies to auto-computed counts; explicit _CRD*.ini overrides are unaffected.
+				if (autoCap && numConstructed > 0) {
+					numConstructed = std::max(static_cast<std::uint16_t>(1),
+					                          static_cast<std::uint16_t>(numConstructed / 2));
+				}
 			}
 
 			std::uint16_t cap = 0;
