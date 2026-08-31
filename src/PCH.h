@@ -42,11 +42,6 @@ struct string_hash
 {
 	using is_transparent = void;  // enable heterogeneous overloads
 
-	std::size_t operator()(const std::string& str) const
-	{
-		return boost::hash<std::string>()(str);
-	}
-
 	std::size_t operator()(std::string_view str) const
 	{
 		return boost::hash<std::string_view>()(str);
@@ -54,8 +49,8 @@ struct string_hash
 };
 
 template <class D>
-using StringMap = Map<std::string, D, string_hash>;
-using StringSet = Set<std::string, string_hash>;
+using StringMap = Map<std::string, D, string_hash, std::equal_to<>>;
+using StringSet = Set<std::string, string_hash, std::equal_to<>>;
 
 namespace Runtime
 {
