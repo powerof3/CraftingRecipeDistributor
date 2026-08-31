@@ -111,13 +111,13 @@ namespace CRAFT
 			ingot = static_cast<RE::TESBoundObject*>(formCount->form);
 			numConstructed = formCount->count;
 		} else {
-			std::string_view name = a_armor->GetName();
+			auto edid = editorID::get_editorID(a_armor);
 			if (const auto templateArmor = a_armor->templateArmor; templateArmor) {
-				name = templateArmor->GetName();
+				edid = editorID::get_editorID(templateArmor);
 			}
-			if (RE::ArmorContainsModel(a_armor, "gold") || REX::STR::ICONTAINS(name, "gold")) {
+			if (RE::ArmorContainsModel(a_armor, "gold") || REX::STR::ICONTAINS(edid, "gold")) {
 				ingot = goldIngot;
-			} else if (RE::ArmorContainsModel(a_armor, "silver") || REX::STR::ICONTAINS(name, "silver")) {
+			} else if (RE::ArmorContainsModel(a_armor, "silver") || REX::STR::ICONTAINS(edid, "silver")) {
 				ingot = silverIngot;
 			}
 		}
