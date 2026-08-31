@@ -6,7 +6,7 @@
 
 namespace CRAFT
 {
-	class Manager : public REX::Singleton<Manager>
+	class Manager : public REX::TSingleton<Manager>
 	{
 	public:
 		void LoadSettings();
@@ -18,6 +18,8 @@ namespace CRAFT
 		void AddGeneratedConstructible(RE::BGSConstructibleObject* a_obj);
 
 	private:
+		static constexpr auto configPath = R"(Data\SKSE\Plugins\po3_CraftingRecipeDistributor.ini)"sv;
+		
 		void InitData();
 
 		void CreateStandardRecipes(TYPE a_type, RE::TESBoundObject* a_form);

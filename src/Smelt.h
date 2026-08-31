@@ -16,10 +16,10 @@ namespace CRAFT
 		RE::BGSKeyword* tanningRackKywd{};
 		RE::BGSKeyword* forgeKywd{};
 
-		std::uint16_t maxWeapAmount{ 0 };
-		std::uint16_t maxArmorAmount{ 0 };
-		std::uint16_t maxJewelryAmount{ 0 };
-		std::uint16_t maxClutterAmount{ 0 };
+		REX::TIniSetting<std::uint16_t> maxWeapAmount{ "SMELT", "Weapon cap", 0 };
+		REX::TIniSetting<std::uint16_t> maxArmorAmount{ "SMELT", "Armor cap", 0 };
+		REX::TIniSetting<std::uint16_t> maxJewelryAmount{ "SMELT", "Jewelry cap", 0 };
+		REX::TIniSetting<std::uint16_t> maxClutterAmount{ "SMELT", "Clutter cap", 0 };
 
 		std::uint32_t weapCount{ 0 };
 		std::uint32_t armorCount{ 0 };

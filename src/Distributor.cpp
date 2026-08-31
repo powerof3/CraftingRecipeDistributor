@@ -4,19 +4,19 @@ namespace CRAFT
 {
 	void Manager::LoadOverwrites()
 	{
-		logger::info("{:*^30}", "OVERWRITES");
+		REX::INFO("{:*^30}", "OVERWRITES");
 
 		std::vector<std::string> configs = clib_util::distribution::get_configs(R"(Data\)", "_CRD"sv);
 
 		if (configs.empty()) {
-			logger::warn("No .ini files with _CRD suffix were found within the Data folder, aborting...");
+			REX::WARN("No .ini files with _CRD suffix were found within the Data folder, aborting...");
 			return;
 		}
 
-		logger::info("{} matching inis found", configs.size());
+		REX::INFO("{} matching inis found", configs.size());
 
 		for (auto& path : configs) {
-			logger::info("\tINI : {}", path);
+			REX::INFO("\tINI : {}", path);
 
 			CSimpleIniA ini;
 			ini.SetUnicode();
@@ -24,7 +24,7 @@ namespace CRAFT
 			ini.SetAllowKeyOnly();
 
 			if (const auto rc = ini.LoadFile(path.c_str()); rc < 0) {
-				logger::error("\t\tcouldn't read INI");
+				REX::ERROR("\t\tcouldn't read INI");
 				continue;
 			}
 
@@ -38,27 +38,19 @@ namespace CRAFT
 
 	void Manager::LoadSettings()
 	{
-		logger::info("{:*^30}", "SETTINGS");
+		REX::INFO("{:*^30}", "SETTINGS");
 
-		constexpr auto path = L"Data/SKSE/Plugins/po3_CraftingRecipeDistributor.ini";
+		const auto store = REX::FIniSettingStore::GetSingleton();
+		store->Init(configPath.data(), "");
 
-		CSimpleIniA ini;
-		ini.SetUnicode();
+		store->Load();
+		store->Save();
 
-		ini.LoadFile(path);
-
-		ini::get_value(ini, smelt.maxWeapAmount, "SMELT", "Weapon cap", ";maximum amount of ingots (or other materials) recieved when smelting weapons");
-		ini::get_value(ini, smelt.maxArmorAmount, "SMELT", "Armor cap", ";maximum amount of ingots (or other materials) recieved when smelting armor");
-		ini::get_value(ini, smelt.maxJewelryAmount, "SMELT", "Jewelry cap", ";maximum amount of ingots (or other materials) recieved when smelting jewelry");
-		ini::get_value(ini, smelt.maxClutterAmount, "SMELT", "Clutter cap", ";maximum amount of ingots (or other materials) recieved when smelting clutter");
-
-		logger::info("SMELT");
-		logger::info("\tmax weapon cap : {}", smelt.maxWeapAmount);
-		logger::info("\tmax armor cap : {}", smelt.maxArmorAmount);
-		logger::info("\tmax jewelry cap : {}", smelt.maxJewelryAmount);
-		logger::info("\tmax clutter cap : {}", smelt.maxClutterAmount);
-
-		void(ini.SaveFile(path));
+		REX::INFO("SMELT");
+		REX::INFO("\tmax weapon cap : {}", smelt.maxWeapAmount.GetValue());
+		REX::INFO("\tmax armor cap : {}", smelt.maxArmorAmount.GetValue());
+		REX::INFO("\tmax jewelry cap : {}", smelt.maxJewelryAmount.GetValue());
+		REX::INFO("\tmax clutter cap : {}", smelt.maxClutterAmount.GetValue());
 	}
 
 	void Manager::AddGeneratedConstructible(RE::BGSConstructibleObject* a_obj)
@@ -123,9 +115,9 @@ namespace CRAFT
 			if (const auto templateArmor = a_armor->templateArmor; templateArmor) {
 				name = templateArmor->GetName();
 			}
-			if (RE::ArmorContainsModel(a_armor, "gold") || string::icontains(name, "gold")) {
+			if (RE::ArmorContainsModel(a_armor, "gold") || REX::STR::ICONTAINS(name, "gold")) {
 				ingot = goldIngot;
-			} else if (RE::ArmorContainsModel(a_armor, "silver") || string::icontains(name, "silver")) {
+			} else if (RE::ArmorContainsModel(a_armor, "silver") || REX::STR::ICONTAINS(name, "silver")) {
 				ingot = silverIngot;
 			}
 		}
@@ -163,13 +155,13 @@ namespace CRAFT
 			numConstructed = formCount->count;
 		} else {
 			if (!a_miscObj->HasKeywordString("VendorItemOreIngot"sv) && (a_miscObj->HasKeywordString("VendorItemClutter"sv) || a_miscObj->HasKeywordString("VendorItemTool"sv))) {
-				if (string::icontains(a_miscObj->model, "gold") || string::icontains(a_miscObj->model, "coin")) {
+				if (REX::STR::ICONTAINS(a_miscObj->model, "gold") || REX::STR::ICONTAINS(a_miscObj->model, "coin")) {
 					ingot = goldIngot;
-				} else if (string::icontains(a_miscObj->model, "silver")) {
+				} else if (REX::STR::ICONTAINS(a_miscObj->model, "silver")) {
 					ingot = silverIngot;
-				} else if (string::icontains(a_miscObj->model, "dwemer")) {
+				} else if (REX::STR::ICONTAINS(a_miscObj->model, "dwemer")) {
 					ingot = dwemerIngot;
-				} else if (std::ranges::any_of(ironMats, [&](const auto& str) { return string::icontains(a_miscObj->model, str); })) {
+				} else if (std::ranges::any_of(ironMats, [&](const auto& str) { return REX::STR::ICONTAINS(a_miscObj->model, str); })) {
 					ingot = ironIngot;
 				}
 			}
@@ -233,7 +225,7 @@ namespace CRAFT
 			}
 
 			constexpr auto is_valid_form = [](RE::TESForm* a_form) {
-				return a_form != nullptr && a_form->GetPlayable() && !string::is_empty(a_form->GetName());
+				return a_form != nullptr && a_form->GetPlayable() && !REX::STR::IS_EMPTY(a_form->GetName());
 			};
 
 			// generate recipes
@@ -264,15 +256,15 @@ namespace CRAFT
 
 			std::ranges::copy(generatedConstructibles, std::back_inserter(dataHandler->GetFormArray<RE::BGSConstructibleObject>()));
 
-			logger::info("{:*^30}", "RESULT");
-			logger::info("SMELT");
-			logger::info("\t{} weapon recipes added", smelt.weapCount);
-			logger::info("\t{} armor recipes added", smelt.armorCount);
-			logger::info("\t{} jewelry recipes added", smelt.jewelryCount);
-			logger::info("\t{} clutter recipes added", smelt.miscObjCount);
-			logger::info("TEMPER");
-			logger::info("\t{} weapon recipes added", temper.weapCount);
-			logger::info("\t{} armor recipes added", temper.armorCount);
+			REX::INFO("{:*^30}", "RESULT");
+			REX::INFO("SMELT");
+			REX::INFO("\t{} weapon recipes added", smelt.weapCount);
+			REX::INFO("\t{} armor recipes added", smelt.armorCount);
+			REX::INFO("\t{} jewelry recipes added", smelt.jewelryCount);
+			REX::INFO("\t{} clutter recipes added", smelt.miscObjCount);
+			REX::INFO("TEMPER");
+			REX::INFO("\t{} weapon recipes added", temper.weapCount);
+			REX::INFO("\t{} armor recipes added", temper.armorCount);
 
 			Clear();
 		}

@@ -6,25 +6,22 @@
 #include <ranges>
 
 #include "RE/Skyrim.h"
-#include "REX/REX/Singleton.h"
+#include "REX/REX.h"
 #include "SKSE/SKSE.h"
 
 #include <MergeMapperPluginAPI.h>
 
-#include <ankerl/unordered_dense.h>
+#include <boost/unordered/unordered_flat_map.hpp>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <frozen/map.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
 #include <CLibUtil/distribution.hpp>
-#include <CLibUtil/rng.hpp>
-#include <CLibUtil/string.hpp>
-#include <ClibUtil/simpleINI.hpp>
-
 #include <ClibUtil/editorID.hpp>
 
-#define DLLEXPORT __declspec(dllexport)
+#include <SimpleIni.h>
+#undef ERROR
 
-namespace logger = SKSE::log;
 using namespace clib_util;
 using namespace std::literals;
 
@@ -35,29 +32,43 @@ struct overload : Ts...
 	using Ts::operator()...;
 };
 
-template <class K, class D>
-using Map = ankerl::unordered_dense::map<K, D>;
+template <class K, class D, class H = boost::hash<K>, class KEqual = std::equal_to<K>>
+using Map = boost::unordered_flat_map<K, D, H, KEqual>;
 
-template <class K>
-using Set = ankerl::unordered_dense::set<K>;
+template <class K, class H = boost::hash<K>, class KEqual = std::equal_to<K>>
+using Set = boost::unordered_flat_set<K, H, KEqual>;
 
 struct string_hash
 {
 	using is_transparent = void;  // enable heterogeneous overloads
-	using is_avalanching = void;  // mark class as high quality avalanching hash
 
-	[[nodiscard]] std::uint64_t operator()(std::string_view str) const noexcept
+	std::size_t operator()(const std::string& str) const
 	{
-		return ankerl::unordered_dense::hash<std::string_view>{}(str);
+		return boost::hash<std::string>()(str);
+	}
+
+	std::size_t operator()(std::string_view str) const
+	{
+		return boost::hash<std::string_view>()(str);
 	}
 };
 
 template <class D>
-using StringMap = ankerl::unordered_dense::map<std::string, D, string_hash, std::equal_to<>>;
+using StringMap = Map<std::string, D, string_hash>;
+using StringSet = Set<std::string, string_hash>;
 
-namespace stl
+namespace Runtime
 {
-	using namespace SKSE::stl;
+	inline constexpr REL::Version SSE_1_7_99(1, 7, 99, 0);
+	inline constexpr REL::Version MIN_ADDRESS_LIBRARY_V5 = SSE_1_7_99;
+
+	inline REL::Version version{};
+
+	[[nodiscard]] inline bool IsAtLeast1_7_99() noexcept
+	{
+		static bool result = REX::FModule::GetExecutingModule().GetFileVersion() >= Runtime::SSE_1_7_99;
+		return result;
+	}
 }
 
 #include "Version.h"

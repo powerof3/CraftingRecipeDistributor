@@ -5,8 +5,8 @@ namespace RE
 	std::variant<RE::TESForm*, std::string> ParseFormType(const std::string& a_str)
 	{
 		if (a_str.contains(" ~ ")) {
-			if (auto formIDpair = string::split(a_str, " ~ "); !formIDpair.empty()) {
-				auto        formID = string::to_num<RE::FormID>(formIDpair[0], true);
+			if (auto formIDpair = REX::STR::SPLIT(a_str, " ~ "); !formIDpair.empty()) {
+				auto        formID = REX::STR::TO_NUM<RE::FormID>(formIDpair[0], true);
 				const auto& esp = formIDpair[1];
 
 				if (g_mergeMapperInterface) {
@@ -16,8 +16,8 @@ namespace RE
 					return RE::TESDataHandler::GetSingleton()->LookupForm(formID, esp);
 				}
 			}
-		} else if (string::is_only_hex(a_str)) {
-			return RE::TESForm::LookupByID(string::to_num<RE::FormID>(a_str, true));
+		} else if (REX::STR::IS_ONLY_HEX(a_str)) {
+			return RE::TESForm::LookupByID(REX::STR::TO_NUM<RE::FormID>(a_str, true));
 		}
 
 		return a_str;
@@ -41,7 +41,7 @@ namespace RE
 
 	bool ArmorContainsModel(RE::TESObjectARMO* a_armor, std::string_view a_str)
 	{
-		return string::icontains(a_armor->worldModels[0].GetModel(), a_str);
+		return REX::STR::ICONTAINS(a_armor->worldModels[0].GetModel(), a_str);
 	}
 }
 
@@ -88,9 +88,9 @@ namespace CRAFT
 		CSimpleIniA::TNamesDepend keys;
 		ini.GetAllKeys(a_type, keys);
 		for (const auto& key : keys) {
-			blackList.emplace_back(string::trim_copy(key.pItem));
+			blackList.emplace_back(REX::STR::TRIM_COPY(key.pItem));
 		}
-		logger::info("\t\t{} entries : {}", a_type, blackList.size());
+		REX::INFO("\t\t{} entries : {}", a_type, blackList.size());
 	}
 
 	void CraftingBase::LoadINIData(const CSimpleIniA& ini, const char* a_type)
@@ -100,22 +100,22 @@ namespace CRAFT
 		values.sort(CSimpleIniA::Entry::LoadOrder());
 
 		if (const auto size = values.size(); size > 0) {
-			logger::info("\t\t{} entries : {}", a_type, size);
+			REX::INFO("\t\t{} entries : {}", a_type, size);
 
 			customINIData.reserve(values.size());
 			for (auto& value : values) {
 				customINIData.emplace_back(value.pItem);
 			}
 		} else {
-			logger::error("\t\t{} entries: 0", a_type);
+			REX::ERROR("\t\t{} entries: 0", a_type);
 		}
 	}
 
 	void CraftingBase::InitINIData()
 	{
 		for (const auto& value : customINIData) {
-			auto sections = string::split(value, "|");
-			std::ranges::for_each(sections, [](auto& str) { string::trim(str); });
+			auto sections = REX::STR::SPLIT(value, "|");
+			std::ranges::for_each(sections, [](auto& str) { REX::STR::TRIM(str); });
 
 			//[FORMID ~ ESP]
 			RE::TESForm* createdItem = nullptr;
@@ -130,13 +130,13 @@ namespace CRAFT
 			//COUNT
 			std::uint16_t count = 0;
 			if (sections.size() > 2) {
-				count = string::to_num<std::uint16_t>(sections[2]);
+				count = REX::STR::TO_NUM<std::uint16_t>(sections[2]);
 			}
 
 			//KEYWORDS
 			if (sections.size() > 1) {
-				auto split_str = string::split(sections[1], ",");
-				std::ranges::for_each(split_str, [](auto& str) { string::trim(str); });
+				auto split_str = REX::STR::SPLIT(sections[1], ",");
+				std::ranges::for_each(split_str, [](auto& str) { REX::STR::TRIM(str); });
 
 				auto formCount = FormCount(createdItem, count);
 
