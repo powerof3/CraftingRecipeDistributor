@@ -36,17 +36,9 @@ namespace CRAFT
 			requiredNum = 1;
 		}
 
-		bool       isArmor = a_item->IsArmor();
+		const bool isArmor = a_item->IsArmor();
 		const auto benchKeyword = isArmor ? armorKywd : weapKywd;
-
-		bool skipRecipe = false;
-		Manager::GetSingleton()->ForEachConstructible([&](const auto& cobj) {
-			if (cobj && cobj->benchKeyword == benchKeyword && cobj->createdItem == a_item) {
-				skipRecipe = true;
-				return RE::BSContainer::ForEachResult::kStop;
-			}
-			return RE::BSContainer::ForEachResult::kContinue;
-		});
+		const bool skipRecipe = Manager::GetSingleton()->FindConstructible(benchKeyword, a_item) != nullptr;
 
 		if (skipRecipe) {
 			return false;

@@ -73,28 +73,26 @@ namespace CRAFT
 		for (const auto& cobj : cobjArray) {
 			vanillaConstructibles.emplace_back(cobj);
 		}
+
+		constructiblesMap.reserve(vanillaConstructibles.size());
+		for (const auto& cobj : vanillaConstructibles) {
+			if (cobj && cobj->createdItem) {
+				constructiblesMap[cobj->createdItem].push_back(cobj);
+			}
+		}
 	}
 
 	void Manager::CreateStandardRecipes(TYPE a_type, RE::TESBoundObject* a_form)
 	{
-		bool didFormID = false;
-
-		if (smelt.CreateRecipe(a_type, a_form)) {
-			didFormID = true;
+		if (!smelt.CreateRecipe(a_type, a_form)) {
+			if (auto formCount = smelt.keywordMap.GetData(a_form)) {
+				smelt.CreateRecipe(a_type, a_form, formCount->form, formCount->count);
+			}
 		}
-		if (temper.CreateRecipe(a_form)) {
-			didFormID = true;
-		}
-
-		if (didFormID) {
-			return;
-		}
-
-		if (auto formCount = smelt.keywordMap.GetData(a_form)) {
-			smelt.CreateRecipe(a_type, a_form, formCount->form, formCount->count);
-		}
-		if (auto formCount = temper.keywordMap.GetData(a_form)) {
-			temper.CreateRecipe(a_form, formCount->form, formCount->count);
+		if (!temper.CreateRecipe(a_form)) {
+			if (auto formCount = temper.keywordMap.GetData(a_form)) {
+				temper.CreateRecipe(a_form, formCount->form, formCount->count);
+			}
 		}
 	}
 
@@ -198,6 +196,8 @@ namespace CRAFT
 		generatedConstructibles.clear();
 		generatedConstructibles.shrink_to_fit();
 
+		constructiblesMap.clear();
+
 		smelt.Clear();
 		temper.Clear();
 	}
@@ -270,12 +270,15 @@ namespace CRAFT
 		}
 	}
 
-	void Manager::ForEachConstructible(const std::function<RE::BSContainer::ForEachResult(RE::BGSConstructibleObject*)>& a_fn)
+	RE::BGSConstructibleObject* Manager::FindConstructible(RE::BGSKeyword* a_bench, RE::TESForm* a_createdItem) const
 	{
-		for (auto& cobj : vanillaConstructibles) {
-			if (a_fn(cobj) == RE::BSContainer::ForEachResult::kStop) {
-				break;
+		if (const auto it = constructiblesMap.find(a_createdItem); it != constructiblesMap.end()) {
+			for (const auto& cobj : it->second) {
+				if (cobj->benchKeyword == a_bench) {
+					return cobj;
+				}
 			}
 		}
+		return nullptr;
 	}
 }

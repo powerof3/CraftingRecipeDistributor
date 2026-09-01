@@ -33,7 +33,7 @@ void OnInit(SKSE::MessagingInterface::Message* a_msg)
 SKSE_PLUGIN_VERSION = []() {
 	SKSE::PluginVersionData v;
 	v.PluginVersion(REL::Version{ Version::MAJOR, Version::MINOR, Version::PATCH });
-	v.PluginName("powerofthree's Papyrus Extender");
+	v.PluginName("Crafting Recipe Distributor");
 	v.AuthorName("powerofthree");
 	v.UsesAddressLibrary();
 	v.UsesNoStructs();
@@ -51,7 +51,7 @@ SKSE_PLUGIN_VERSION = []() {
 SKSE_PLUGIN_QUERY(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
 {
 	a_info->infoVersion = SKSE::PluginInfo::kVersion;
-	a_info->name = "powerofthree's Papyrus Extender";
+	a_info->name = "Crafting Recipe Distributor";
 	a_info->version = Version::MAJOR;
 
 	if (a_skse->IsEditor()) {

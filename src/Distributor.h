@@ -13,13 +13,13 @@ namespace CRAFT
 		void LoadOverwrites();
 		void Distribute();
 
-		void ForEachConstructible(const std::function<RE::BSContainer::ForEachResult(RE::BGSConstructibleObject*)>& a_fn);
+		RE::BGSConstructibleObject* FindConstructible(RE::BGSKeyword* a_bench, RE::TESForm* a_createdItem) const;
 
 		void AddGeneratedConstructible(RE::BGSConstructibleObject* a_obj);
 
 	private:
 		static constexpr auto configPath = R"(Data\SKSE\Plugins\po3_CraftingRecipeDistributor.ini)"sv;
-		
+
 		void InitData();
 
 		void CreateStandardRecipes(TYPE a_type, RE::TESBoundObject* a_form);
@@ -29,14 +29,15 @@ namespace CRAFT
 		void Clear();
 
 		// members
-		RE::TESObjectMISC*                       ironIngot{};
-		RE::TESObjectMISC*                       dwemerIngot{};
-		RE::TESObjectMISC*                       goldIngot{};
-		RE::TESObjectMISC*                       silverIngot{};
-		TEMPER                                   temper;
-		SMELT                                    smelt;
-		std::vector<RE::BGSConstructibleObject*> vanillaConstructibles{};
-		std::vector<RE::BGSConstructibleObject*> generatedConstructibles{};
+		RE::TESObjectMISC*                                          ironIngot{};
+		RE::TESObjectMISC*                                          dwemerIngot{};
+		RE::TESObjectMISC*                                          goldIngot{};
+		RE::TESObjectMISC*                                          silverIngot{};
+		TEMPER                                                      temper;
+		SMELT                                                       smelt;
+		std::vector<RE::BGSConstructibleObject*>                    vanillaConstructibles{};
+		std::vector<RE::BGSConstructibleObject*>                    generatedConstructibles{};
+		Map<RE::TESForm*, std::vector<RE::BGSConstructibleObject*>> constructiblesMap{};
 
 		static constexpr std::array<std::string_view, 7> ironMats = { "iron", "pick", "kettle", "lantern", "knife", "scissor", "scapel" };
 	};

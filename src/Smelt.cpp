@@ -71,13 +71,9 @@ namespace CRAFT
 					item = weap;
 				}
 
-				Manager::GetSingleton()->ForEachConstructible([&](const auto& cobj) {
-					if (cobj && cobj->benchKeyword == forgeKywd && cobj->createdItem == item) {
-						numConstructed = static_cast<std::uint16_t>(cobj->requiredItems.GetObjectCount(static_cast<RE::TESBoundObject*>(a_ingot)));
-						return RE::BSContainer::ForEachResult::kStop;
-					}
-					return RE::BSContainer::ForEachResult::kContinue;
-				});
+				if (const auto cobj = Manager::GetSingleton()->FindConstructible(forgeKywd, item)) {
+					numConstructed = static_cast<std::uint16_t>(cobj->requiredItems.GetObjectCount(static_cast<RE::TESBoundObject*>(a_ingot)));
+				}
 
 				if (numConstructed == 0) {
 					auto itemGold = item->GetGoldValue();
